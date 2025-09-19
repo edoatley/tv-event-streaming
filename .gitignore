@@ -1,0 +1,12 @@
+generated-config.js
+.idea
+bin
+.aws-sam
+build
+.gradle
+.DS_Store
+samconfig.toml
+local-secrets.json
+.venv
+
+/.aws-sam/
