@@ -1,0 +1,28 @@
+{
+  "httpMethod": "PUT",
+  "path": "/preferences",
+  "resource": "/preferences",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "ey...<a_valid_jwt_token>...tQ"
+  },
+  "body": "{\"sources\": [\"203\", \"349\"], \"genres\": [\"4\", \"6\"]}",
+  "isBase64Encoded": false,
+  "requestContext": {
+    "httpMethod": "PUT",
+    "path": "/Prod/preferences",
+    "resourcePath": "/preferences",
+    "requestId": "f0a04e82-a8e1-4f46-b1c1-bfb94f412d3g",
+    "authorizer": {
+      "claims": {
+        "sub": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+        "email_verified": "true",
+        "iss": "https://cognito-idp.eu-west-2.amazonaws.com/eu-west-2_Re96F4z3a",
+        "cognito:username": "test.user@example.com",
+        "aud": "2lcrrfq92ikt67acq3ibceiq7b",
+        "token_use": "id",
+        "email": "test.user@example.com"
+      }
+    }
+  }
+}

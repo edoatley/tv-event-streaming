@@ -1,0 +1,150 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: "Web API Lambda for serving data to the SPA"
+
+Parameters:
+  ProgramDataTableName:
+    Type: String
+  ProgramDataTableArn:
+    Type: String
+  UserPoolArn:
+    Type: String
+  StageName:
+    Type: String
+    Default: Prod
+
+Resources:
+  WebApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref StageName
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Ref UserPoolArn
+      AccessLogSetting:
+        DestinationArn: !GetAtt WebApiAccessLogGroup.Arn
+        Format: '{"requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "caller":"$context.identity.caller", "user":"$context.identity.user","requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath", "status":"$context.status","protocol":"$context.protocol", "responseLength":"$context.responseLength"}'
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          LoggingLevel: INFO
+          DataTraceEnabled: true
+          MetricsEnabled: true
+
+  WebApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/api-gateway/${WebApi}"
+      RetentionInDays: 7
+
+  CorsOptionsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.12
+      # This function's only job is to return the correct CORS headers for preflight OPTIONS requests.
+      InlineCode: |
+        import json
+        def handler(event, context):
+            return {
+                "statusCode": 204,
+                "headers": {
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+                    "Access-Control-Allow-Methods": "GET,PUT,POST,OPTIONS,DELETE"
+                },
+                "body": ""
+            }
+      Events:
+        OptionsCatchAll:
+          Type: Api
+          Properties:
+            RestApiId: !Ref WebApi
+            Path: /{proxy+}
+            Method: options
+            Auth:
+              Authorizer: NONE
+
+  WebApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: web_api.lambda_handler
+      Runtime: python3.12
+      CodeUri: ../../src/web_api/
+      MemorySize: 256
+      Timeout: 30
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+                - dynamodb:GetItem
+                - dynamodb:BatchWriteItem
+                - dynamodb:BatchGetItem
+                - dynamodb:Scan
+              Resource: !Ref ProgramDataTableArn
+      Environment:
+        Variables:
+          DYNAMODB_TABLE_NAME: !Ref ProgramDataTableName
+      Events:
+        GetSources:
+          Type: Api
+          Properties:
+            RestApiId: !Ref WebApi
+            Path: /sources
+            Method: get
+            Auth:
+              Authorizer: NONE
+        GetGenres:
+          Type: Api
+          Properties:
+            RestApiId: !Ref WebApi
+            Path: /genres
+            Method: get
+            Auth:
+              Authorizer: NONE
+        GetTitles:
+          Type: Api
+          Properties:
+            RestApiId: !Ref WebApi
+            Path: /titles
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+        GetRecommendations:
+          Type: Api
+          Properties:
+            RestApiId: !Ref WebApi
+            Path: /recommendations
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+        GetPreferences:
+          Type: Api
+          Properties:
+            RestApiId: !Ref WebApi
+            Path: /preferences
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UpdatePreferences:
+          Type: Api
+          Properties:
+            RestApiId: !Ref WebApi
+            Path: /preferences
+            Method: put
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+Outputs:
+  ApiEndpoint:
+    Description: "Web API Gateway endpoint URL for the Prod stage"
+    Value: !Sub "https://${WebApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  WebApiFunctionName:
+    Description: "Name of the Web API Lambda function"
+    Value: !Ref WebApiFunction
+  WebApiFunctionArn:
+    Description: "ARN of the Web API Lambda function"
+    Value: !GetAtt WebApiFunction.Arn

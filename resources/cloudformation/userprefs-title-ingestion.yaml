@@ -1,0 +1,94 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM application that periodically fetches titles from WatchMode based on all user preferences
+  and publishes them to a Kinesis stream.
+
+Parameters:
+  ProgramDataTableName:
+    Type: String
+  ProgramDataTableArn:
+    Type: String
+  WatchModeApiKeySecretArn:
+    Type: String
+  WatchModeHostname:
+    Type: String
+  ProgrammeDataStreamName:
+    Type: String
+  ProgrammeDataStreamArn:
+    Type: String
+
+Resources:
+  UserPrefsTitleIngestionLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: UKTVDataIngestionLambdaRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: UserPrefsTitleIngestionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: 'arn:aws:logs:*:*:*'
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource: !Ref ProgramDataTableArn
+              - Effect: Allow
+                Action:
+                  - kinesis:PutRecord
+                  - kinesis:PutRecords
+                Resource: !Ref ProgrammeDataStreamArn
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Ref WatchModeApiKeySecretArn
+
+  UserPrefsTitleIngestionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: PeriodicUKTitlesForUserPrefsFunction
+      Handler: ingestion.lambda_handler
+      Runtime: python3.12
+      CodeUri: ../../src/userprefs_title_ingestion/
+      Description: Periodically fetches TV data from an external API and sends it to Kinesis.
+      MemorySize: 256
+      Timeout: 300
+      Role: !GetAtt UserPrefsTitleIngestionLambdaRole.Arn
+      Events:
+        ScheduledTrigger:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 day)
+            Name: DailyUKTVDataIngestionTrigger
+            Enabled: true
+      Environment:
+        Variables:
+          DYNAMODB_TABLE_NAME: !Ref ProgramDataTableName
+          KINESIS_STREAM_NAME: !Ref ProgrammeDataStreamName
+          WATCHMODE_API_KEY_SECRET_ARN: !Ref WatchModeApiKeySecretArn
+          WATCHMODE_HOSTNAME: !Ref WatchModeHostname
+          AWS_ENDPOINT_URL: "" # for testing
+    Metadata:
+      BuildMethod: python3.12
+
+
+Outputs:
+  UserPrefsTitleIngestionFunctionName:
+    Description: "Name of the User Prefs Title Ingestion Lambda function"
+    Value: !Ref UserPrefsTitleIngestionFunction
+  UserPrefsTitleIngestionFunctionArn:
+    Description: "ARN of the User Prefs Title Ingestion Lambda function"
+    Value: !GetAtt UserPrefsTitleIngestionFunction.Arn

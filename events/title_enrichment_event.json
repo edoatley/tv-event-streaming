@@ -1,0 +1,46 @@
+{
+  "Records": [
+    {
+      "eventID": "1",
+      "eventName": "INSERT",
+      "eventVersion": "1.0",
+      "eventSource": "aws:dynamodb",
+      "awsRegion": "eu-west-2",
+      "dynamodb": {
+        "Keys": {
+          "PK": {
+            "S": "title:3226810"
+          },
+          "SK": {
+            "S": "record"
+          }
+        },
+        "NewImage": {
+          "PK": {
+            "S": "title:3226810"
+          },
+          "SK": {
+            "S": "record"
+          },
+          "data": {
+            "M": {
+              "id": {
+                "N": "3226810"
+              },
+              "title": {
+                "S": "Sakamoto Days"
+              },
+              "year": {
+                "N": "2024"
+              }
+            }
+          }
+        },
+        "SequenceNumber": "111",
+        "SizeBytes": 222,
+        "StreamViewType": "NEW_IMAGE"
+      },
+      "eventSourceARN": "arn:aws:dynamodb:eu-west-2:123456789012:table/UKTVProgrammesLocal/stream/2024-07-23T10:00:00.000"
+    }
+  ]
+}

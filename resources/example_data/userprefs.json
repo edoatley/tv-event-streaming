@@ -1,0 +1,39 @@
+{
+  "Items": [
+    {
+      "PK": {
+        "S": "userpref:a1b2c3d4-e5f6-7890-1234-567890abcdef"
+      },
+      "SK": {
+        "S": "genre:4"
+      }
+    },
+    {
+      "PK": {
+        "S": "userpref:a1b2c3d4-e5f6-7890-1234-567890abcdef"
+      },
+      "SK": {
+        "S": "genre:6"
+      }
+    },
+    {
+      "PK": {
+        "S": "userpref:a1b2c3d4-e5f6-7890-1234-567890abcdef"
+      },
+      "SK": {
+        "S": "source:203"
+      }
+    },
+    {
+      "PK": {
+        "S": "userpref:a1b2c3d4-e5f6-7890-1234-567890abcdef"
+      },
+      "SK": {
+        "S": "source:349"
+      }
+    }
+  ],
+  "Count": 4,
+  "ScannedCount": 190,
+  "ConsumedCapacity": null
+}

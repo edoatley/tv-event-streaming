@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM application with a Lambda function to consume title recommendation events from a Kinesis stream.
+
+Parameters:
+  ProgrammeDataStreamArn:
+    Type: String
+    Description: "The ARN of the Kinesis Data Stream to consume from."
+  ProgramDataTableName:
+    Type: String
+    Description: Name of the Program Data DynamoDB table
+  ProgramDataTableArn: # <-- Add this parameter
+    Type: String
+    Description: ARN of the Program Data DynamoDB table
+
+Resources:
+  TitleRecommendationsConsumerLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: TitleRecommendationsConsumerPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: 'arn:aws:logs:*:*:*'
+              - Effect: Allow # Required permissions for Kinesis trigger
+                Action:
+                  - kinesis:GetRecords
+                  - kinesis:GetShardIterator
+                  - kinesis:DescribeStream
+                  - kinesis:ListShards
+                Resource: !Ref ProgrammeDataStreamArn
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchWriteItem
+                Resource: !Ref ProgramDataTableArn
+  TitleRecommendationsConsumerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: TitleRecommendationsConsumerFunction
+      Handler: consumer.lambda_handler
+      Runtime: python3.12
+      CodeUri: ../../src/title_recommendations_consumer/
+      Description: Consumes title recommendation events from Kinesis and logs them.
+      MemorySize: 128
+      Timeout: 60
+      Role: !GetAtt TitleRecommendationsConsumerLambdaRole.Arn
+      Environment:
+        Variables:
+          DYNAMODB_TABLE_NAME: !Ref ProgramDataTableName
+          AWS_ENDPOINT_URL: "" # for testing
+      Events:
+        KinesisStreamTrigger:
+          Type: Kinesis
+          Properties:
+            Stream: !Ref ProgrammeDataStreamArn
+            StartingPosition: LATEST
+            BatchSize: 100
+
+Outputs:
+  TitleRecommendationsConsumerFunctionName:
+    Description: "Name of the Title Recommendations Consumer Lambda function"
+    Value: !Ref TitleRecommendationsConsumerFunction
+  TitleRecommendationsConsumerFunctionArn:
+    Description: "ARN of the Title Recommendations Consumer Lambda function"
+    Value: !GetAtt TitleRecommendationsConsumerFunction.Arn

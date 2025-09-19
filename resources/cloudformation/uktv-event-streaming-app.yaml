@@ -1,0 +1,253 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Root SAM application for the Event Streaming App.
+
+Parameters:
+  CreateDataStream:
+    Type: String
+    Description: "Set to 'true' to create the Kinesis Data Stream."
+    Default: "false"
+    AllowedValues: [ "true", "false" ]
+  ProgrammesTableName:
+    Type: String
+    Description: Name of the DynamoDB table for programmes.
+    Default: UKTVProgrammes
+  TestUserName:
+    Type: String
+    Description: "The username of the pre-created test user"
+    Default: "test.user@example.com"
+  AdminUserName:
+    Type: String
+    Description: "The username for the pre-created admin user."
+    Default: "admin.user@example.com"
+  WatchModeApiKey:
+    Type: String
+    NoEcho: true
+    Description: "The API key for WatchMode API (will be stored in Secrets Manager)"
+  WatchModeHostname:
+    Type: String
+    Description: "The Hostname for WatchMode API"
+    Default: "https://api.watchmode.com"
+
+Conditions:
+  ShouldCreateDataStream: !Equals [ !Ref CreateDataStream, "true" ]
+
+Resources:
+  WatchModeApiKeySecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "${AWS::StackName}/WatchModeApiKey"
+      Description: API key for WatchMode API
+      SecretString: !Ref WatchModeApiKey
+
+  ProgrammesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref ProgrammesTableName
+      AttributeDefinitions:
+        - AttributeName: "PK"
+          AttributeType: "S"
+        - AttributeName: "SK"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "PK"
+          KeyType: "HASH"
+        - AttributeName: "SK"
+          KeyType: "RANGE"
+      BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+
+  ProgrammeDataStream:
+    Type: AWS::Kinesis::Stream
+    Condition: ShouldCreateDataStream
+    Properties:
+      StreamModeDetails:
+        StreamMode: ON_DEMAND
+      RetentionPeriodHours: 24
+
+  WebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-website-${AWS::AccountId}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  CloudFrontOAI:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub "OAI for ${AWS::StackName}"
+
+  WebsiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebsiteBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              CanonicalUser: !GetAtt CloudFrontOAI.S3CanonicalUserId
+            Action: s3:GetObject
+            Resource: !Sub "arn:aws:s3:::${WebsiteBucket}/*"
+
+  WebsiteDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub "CloudFront distribution for ${AWS::StackName} website"
+        DefaultRootObject: index.html
+        Origins:
+          - Id: !Sub "S3-${WebsiteBucket}"
+            DomainName: !GetAtt WebsiteBucket.RegionalDomainName # Use the regional domain name to avoid redirects
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CloudFrontOAI}"
+        DefaultCacheBehavior:
+          TargetOriginId: !Sub "S3-${WebsiteBucket}"
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: ["GET", "HEAD", "OPTIONS"]
+          CachedMethods: ["GET", "HEAD", "OPTIONS"]
+          ForwardedValues:
+            QueryString: false
+            Cookies: { Forward: none }
+          DefaultTTL: 86400
+          MaxTTL: 31536000
+          MinTTL: 0
+
+  # --- Nested Applications ---
+  CognitoApp:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: cognito-resources.yaml
+      Parameters:
+        RootStackName: !Ref AWS::StackName
+        WebsiteDistributionDomainName: !GetAtt WebsiteDistribution.DomainName
+        TestUserName: !Ref TestUserName
+        AdminUserName: !Ref AdminUserName
+
+  AdminApiApp:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: admin-api.yaml
+      Parameters:
+        RootStackName: !Ref AWS::StackName
+        ProgrammesTableName: !Ref ProgrammesTable
+        ProgrammesTableArn: !GetAtt ProgrammesTable.Arn
+        PeriodicReferenceFunctionArn: !GetAtt PeriodicReferenceApp.Outputs.PeriodicReferenceFunctionArn
+        UserPrefsTitleIngestionFunctionArn: !GetAtt UserPrefsTitleIngestionApp.Outputs.UserPrefsTitleIngestionFunctionArn
+        TitleEnrichmentFunctionArn: !GetAtt TitleEnrichmentApp.Outputs.TitleEnrichmentFunctionArn
+        UserPoolArn: !GetAtt CognitoApp.Outputs.UserPoolArn
+
+  PeriodicReferenceApp:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: periodic-reference.yaml
+      Parameters:
+        ProgramDataTableName: !Ref ProgrammesTable
+        ProgramDataTableArn: !GetAtt ProgrammesTable.Arn
+        WatchModeApiKeySecretArn: !Ref WatchModeApiKeySecret
+        WatchModeHostname: !Ref WatchModeHostname
+
+  TitleEnrichmentApp:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: title-enrichment.yaml
+      Parameters:
+        ProgramDataTableName: !Ref ProgrammesTable
+        ProgrammesTableStreamArn: !GetAtt ProgrammesTable.StreamArn
+        WatchModeApiKeySecretArn: !Ref WatchModeApiKeySecret
+        WatchModeHostname: !Ref WatchModeHostname
+
+  TitleRecommendationsConsumerApp:
+    Type: AWS::Serverless::Application
+    Condition: ShouldCreateDataStream
+    Properties:
+      Location: title-recommendations-consumer.yaml
+      Parameters:
+        ProgrammeDataStreamArn: !GetAtt ProgrammeDataStream.Arn
+        ProgramDataTableName: !Ref ProgrammesTable
+        ProgramDataTableArn: !GetAtt ProgrammesTable.Arn
+
+  UserPreferencesApp:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: user-preferences.yaml
+      Parameters:
+        ProgramDataTableName: !Ref ProgrammesTable
+        ProgramDataTableArn: !GetAtt ProgrammesTable.Arn
+        UserPoolArn: !GetAtt CognitoApp.Outputs.UserPoolArn
+
+  UserPrefsTitleIngestionApp:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: userprefs-title-ingestion.yaml
+      Parameters:
+        ProgramDataTableName: !Ref ProgrammesTable
+        ProgramDataTableArn: !GetAtt ProgrammesTable.Arn
+        WatchModeApiKeySecretArn: !Ref WatchModeApiKeySecret
+        WatchModeHostname: !Ref WatchModeHostname
+        ProgrammeDataStreamName: !If [ShouldCreateDataStream, !Ref ProgrammeDataStream, ""]
+        ProgrammeDataStreamArn: !If [ShouldCreateDataStream, !GetAtt ProgrammeDataStream.Arn, ""]
+
+  WebApiApp:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: web-api.yaml
+      Parameters:
+        ProgramDataTableName: !Ref ProgrammesTable
+        ProgramDataTableArn: !GetAtt ProgrammesTable.Arn
+        UserPoolArn: !GetAtt CognitoApp.Outputs.UserPoolArn
+
+Outputs:
+  AdminApiEndpoint:
+    Description: "The Admin API endpoint URL"
+    Value: !GetAtt AdminApiApp.Outputs.ApiEndpoint
+  AdminUsername:
+    Description: "The username of the pre-created admin user"
+    Value: !GetAtt CognitoApp.Outputs.AdminUsername
+  PeriodicReferenceFunctionName:
+    Description: "Name of the Periodic Reference Data Lambda function"
+    Value: !GetAtt PeriodicReferenceApp.Outputs.PeriodicReferenceFunctionName
+  UserPrefsTitleIngestionFunctionName:
+    Description: "Name of the User Prefs Title Ingestion Lambda function"
+    Value: !GetAtt UserPrefsTitleIngestionApp.Outputs.UserPrefsTitleIngestionFunctionName
+  TitleEnrichmentFunctionName:
+    Description: "Name of the Title Enrichment Lambda function"
+    Value: !GetAtt TitleEnrichmentApp.Outputs.TitleEnrichmentFunctionName
+  ProgrammesTable:
+    Description: "The name of the DynamoDB table for programmes"
+    Value: !Ref ProgrammesTable
+  TestScriptUserPoolClientId:
+    Description: "The ID of the Cognito User Pool App Client for test scripts"
+    Value: !GetAtt CognitoApp.Outputs.TestScriptUserPoolClientId
+  TestUsername:
+    Description: "The username of the pre-created test user"
+    Value: !GetAtt CognitoApp.Outputs.TestUsername
+  UserPreferencesApiEndpoint:
+    Description: "The User Preferences API endpoint URL"
+    Value: !GetAtt UserPreferencesApp.Outputs.ApiEndpoint
+  UserPoolClientId:
+    Description: "The ID of the Cognito User Pool App Client for the web app"
+    Value: !GetAtt CognitoApp.Outputs.UserPoolClientId
+  UserPoolDomain:
+    Description: "The domain of the Cognito User Pool"
+    Value: !GetAtt CognitoApp.Outputs.UserPoolDomain
+  UserPoolId:
+    Description: "The ID of the Cognito User Pool"
+    Value: !GetAtt CognitoApp.Outputs.UserPoolId
+  WebApiEndpoint:
+    Description: "The Web API endpoint URL"
+    Value: !GetAtt WebApiApp.Outputs.ApiEndpoint
+  WebsiteBucket:
+    Description: "The S3 bucket hosting the website"
+    Value: !Ref WebsiteBucket
+  WebsiteDistributionId:
+    Description: "The ID of the CloudFront distribution"
+    Value: !Ref WebsiteDistribution
+  WebsiteUrl:
+    Description: "The URL of the hosted website (CloudFront)"
+    Value: !Sub "https://${WebsiteDistribution.DomainName}"

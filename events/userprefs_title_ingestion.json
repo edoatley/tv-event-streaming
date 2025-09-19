@@ -1,0 +1,8 @@
+{
+  "source": "aws.events",
+  "detail-type": "Scheduled Event",
+  "resources": [
+    "arn:aws:events:eu-west-2:123456789012:rule/DailyUKTVDataIngestionTrigger"
+  ],
+  "time": "2024-07-29T10:00:00Z"
+}

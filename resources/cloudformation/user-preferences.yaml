@@ -1,0 +1,173 @@
+# /resources/user-preferences.yaml
+
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: "API and Lambda for managing user preferences"
+
+Parameters:
+  ProgramDataTableName:
+    Type: String
+  ProgramDataTableArn:
+    Type: String
+  UserPoolArn:
+    Type: String
+
+Resources:
+  # The API Gateway, with the OpenAPI spec now inlined for validation.
+  PreferencesApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      DefinitionBody:
+        openapi: "3.0.1"
+        info:
+          title: "UK TV Guide User Preferences API"
+          version: "1.0"
+        paths:
+          /preferences:
+            get:
+              summary: "Get the authenticated user's preferences"
+              security:
+                - CognitoAuthorizer: []
+              x-amazon-apigateway-integration:
+                type: "aws_proxy"
+                httpMethod: "POST"
+                uri:
+                  Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UserPreferencesFunction.Arn}/invocations"
+              responses:
+                "200":
+                  description: "A list of the user's preferences"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/UserPreferences"
+            put:
+              summary: "Set or replace the authenticated user's preferences"
+              security:
+                - CognitoAuthorizer: []
+              x-amazon-apigateway-integration:
+                type: "aws_proxy"
+                httpMethod: "POST"
+                uri:
+                  Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UserPreferencesFunction.Arn}/invocations"
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/UserPreferences"
+              responses:
+                "204":
+                  description: "Preferences updated successfully"
+          /sources:
+            get:
+              summary: "Get all available streaming sources"
+              x-amazon-apigateway-integration:
+                type: "aws_proxy"
+                httpMethod: "POST"
+                uri:
+                  Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UserPreferencesFunction.Arn}/invocations"
+              responses:
+                "200":
+                  description: "A list of all available sources"
+                  content:
+                    application/json:
+                      schema:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Source"
+          /genres:
+            get:
+              summary: "Get all available genres"
+              x-amazon-apigateway-integration:
+                type: "aws_proxy"
+                httpMethod: "POST"
+                uri:
+                  Fn::Sub: "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UserPreferencesFunction.Arn}/invocations"
+              responses:
+                "200":
+                  description: "A list of all available genres"
+                  content:
+                    application/json:
+                      schema:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Genre"
+        components:
+          securitySchemes:
+            CognitoAuthorizer:
+              type: apiKey
+              name: Authorization
+              in: header
+              x-amazon-apigateway-authtype: cognito_user_pools
+              x-amazon-apigateway-authorizer:
+                type: cognito_user_pools
+                providerARNs:
+                  - !Ref UserPoolArn
+          schemas:
+            UserPreferences:
+              type: object
+              properties:
+                sources:
+                  type: array
+                  items:
+                    type: string
+                    description: "The simple ID of the source (e.g., '203')"
+                genres:
+                  type: array
+                  items:
+                    type: string
+                    description: "The simple ID of the genre (e.g., '4')"
+            Source:
+              type: object
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+                type:
+                  type: string
+                regions:
+                  type: array
+                  items:
+                    type: string
+            Genre:
+              type: object
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+
+  # The Lambda function that backs the API
+  UserPreferencesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: preferences.lambda_handler
+      Runtime: python3.12
+      CodeUri: ../../src/user_preferences/
+      MemorySize: 256
+      Timeout: 30
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+                - dynamodb:Scan
+                - dynamodb:BatchWriteItem
+              Resource: !Ref ProgramDataTableArn
+      Environment:
+        Variables:
+          DYNAMODB_TABLE_NAME: !Ref ProgramDataTableName
+          AWS_ENDPOINT_URL: "" # for testing
+
+Outputs:
+  ApiEndpoint:
+    Description: "API Gateway endpoint URL for the Prod stage"
+    Value: !Sub "https://${PreferencesApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  UserPreferencesFunctionName:
+    Description: "Name of the User Preferences Lambda function"
+    Value: !Ref UserPreferencesFunction
+  UserPreferencesFunctionArn:
+    Description: "ARN of the User Preferences Lambda function"
+    Value: !GetAtt UserPreferencesFunction.Arn

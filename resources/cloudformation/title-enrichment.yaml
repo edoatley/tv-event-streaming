@@ -1,0 +1,87 @@
+# resources/cloudformation/title-enrichment.yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM application for enriching title data from a DynamoDB stream.
+
+Parameters:
+  ProgramDataTableName:
+    Type: String
+  ProgrammesTableStreamArn:
+    Type: String
+  WatchModeApiKeySecretArn:
+    Type: String
+  WatchModeHostname:
+    Type: String
+
+Resources:
+  TitleEnrichmentLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: TitleEnrichmentPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: 'arn:aws:logs:*:*:*'
+              - Effect: Allow
+                Action:
+                  - dynamodb:UpdateItem # Permission to update the record
+                Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProgramDataTableName}"
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetRecords
+                  - dynamodb:GetShardIterator
+                  - dynamodb:DescribeStream
+                  - dynamodb:ListStreams
+                Resource: !Ref ProgrammesTableStreamArn
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Ref WatchModeApiKeySecretArn
+
+  TitleEnrichmentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: TitleEnrichmentFunction
+      Handler: enrichment.lambda_handler
+      Runtime: python3.12
+      CodeUri: ../../src/title_enrichment/
+      Description: Consumes DynamoDB stream events to enrich title records.
+      MemorySize: 256
+      Timeout: 60
+      Role: !GetAtt TitleEnrichmentLambdaRole.Arn
+      Events:
+        Stream:
+          Type: DynamoDB
+          Properties:
+            Stream: !Ref ProgrammesTableStreamArn
+            BatchSize: 10
+            StartingPosition: LATEST
+      Environment:
+        Variables:
+          DYNAMODB_TABLE_NAME: !Ref ProgramDataTableName
+          WATCHMODE_API_KEY_SECRET_ARN: !Ref WatchModeApiKeySecretArn
+          WATCHMODE_HOSTNAME: !Ref WatchModeHostname
+          AWS_ENDPOINT_URL: "" # for testing
+    Metadata:
+      BuildMethod: python3.12
+
+Outputs:
+  TitleEnrichmentFunctionName:
+    Description: "Name of the Title Enrichment Lambda function"
+    Value: !Ref TitleEnrichmentFunction
+  TitleEnrichmentFunctionArn:
+    Description: "ARN of the Title Enrichment Lambda function"
+    Value: !GetAtt TitleEnrichmentFunction.Arn

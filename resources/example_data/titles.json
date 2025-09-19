@@ -1,0 +1,1247 @@
+{
+  "Items": [
+    {
+      "PK": {
+        "S": "title:1615420"
+      },
+      "SK": {
+        "S": "record"
+      },
+      "data": {
+        "M": {
+          "genre_ids": {
+            "L": [
+              {
+                "S": "4"
+              },
+              {
+                "S": "6"
+              }
+            ]
+          },
+          "id": {
+            "N": "1615420"
+          },
+          "imdb_id": {
+            "S": "tt12593682"
+          },
+          "plot_overview": {
+            "S": "Unlucky assassin Ladybug is determined to do his job peacefully after one too many gigs gone off the rails. Fate, however, may have other plans, as Ladybug's latest mission puts him on a collision course with lethal adversaries from around the globe—all with connected, yet conflicting, objectives—on the world's fastest train."
+          },
+          "poster": {
+            "S": "https://cdn.watchmode.com/posters/01615420_poster_w342.jpg"
+          },
+          "source_ids": {
+            "L": [
+              {
+                "S": "203"
+              },
+              {
+                "S": "349"
+              }
+            ]
+          },
+          "title": {
+            "S": "Bullet Train"
+          },
+          "tmdb_id": {
+            "N": "718930"
+          },
+          "tmdb_type": {
+            "S": "movie"
+          },
+          "type": {
+            "S": "movie"
+          },
+          "user_rating": {
+            "N": "7.4"
+          },
+          "year": {
+            "N": "2022"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "title:3196573"
+      },
+      "SK": {
+        "S": "record"
+      },
+      "data": {
+        "M": {
+          "genre_ids": {
+            "L": [
+              {
+                "S": "4"
+              },
+              {
+                "S": "6"
+              }
+            ]
+          },
+          "id": {
+            "N": "3196573"
+          },
+          "imdb_id": {
+            "S": "tt27713897"
+          },
+          "plot_overview": {
+            "S": "This intimate docuseries follows Arnold Schwarzenegger's multifaceted life and career, from bodybuilding champ to Hollywood icon to politician."
+          },
+          "poster": {
+            "S": "https://cdn.watchmode.com/posters/03196573_poster_w342.jpg"
+          },
+          "source_ids": {
+            "L": [
+              {
+                "S": "203"
+              },
+              {
+                "S": "349"
+              }
+            ]
+          },
+          "title": {
+            "S": "Arnold"
+          },
+          "tmdb_id": {
+            "N": "226135"
+          },
+          "tmdb_type": {
+            "S": "tv"
+          },
+          "type": {
+            "S": "tv_miniseries"
+          },
+          "user_rating": {
+            "N": "8.2"
+          },
+          "year": {
+            "N": "2023"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "title:1596405"
+      },
+      "SK": {
+        "S": "record"
+      },
+      "data": {
+        "M": {
+          "genre_ids": {
+            "L": [
+              {
+                "S": "4"
+              },
+              {
+                "S": "6"
+              }
+            ]
+          },
+          "id": {
+            "N": "1596405"
+          },
+          "imdb_id": {
+            "S": "tt11564570"
+          },
+          "plot_overview": {
+            "S": "World-famous detective Benoit Blanc heads to Greece to peel back the layers of a mystery surrounding a tech billionaire and his eclectic crew of friends."
+          },
+          "poster": {
+            "S": "https://cdn.watchmode.com/posters/01596405_poster_w342.jpg"
+          },
+          "source_ids": {
+            "L": [
+              {
+                "S": "203"
+              },
+              {
+                "S": "349"
+              }
+            ]
+          },
+          "title": {
+            "S": "Glass Onion: A Knives Out Mystery"
+          },
+          "tmdb_id": {
+            "N": "661374"
+          },
+          "tmdb_type": {
+            "S": "movie"
+          },
+          "type": {
+            "S": "movie"
+          },
+          "user_rating": {
+            "N": "7.3"
+          },
+          "year": {
+            "N": "2022"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "title:3274444"
+      },
+      "SK": {
+        "S": "record"
+      },
+      "data": {
+        "M": {
+          "genre_ids": {
+            "L": [
+              {
+                "S": "4"
+              },
+              {
+                "S": "6"
+              }
+            ]
+          },
+          "id": {
+            "N": "3274444"
+          },
+          "imdb_id": {
+            "S": "tt37666468"
+          },
+          "plot_overview": {
+            "S": "Takes an inside look at the making of the hit reality TV competition, exploring the good, the bad, and the complicated. Featuring interviews with former contestants, trainers, producers, and health professionals, the documentary examines the show's approach to transformation, the support systems in place, and the unique challenges of filming reality television."
+          },
+          "poster": {
+            "S": "https://cdn.watchmode.com/posters/03274444_poster_w342.jpg"
+          },
+          "source_ids": {
+            "L": [
+              {
+                "S": "203"
+              },
+              {
+                "S": "349"
+              }
+            ]
+          },
+          "title": {
+            "S": "Fit for TV: The Reality of the Biggest Loser"
+          },
+          "tmdb_id": {
+            "N": "296549"
+          },
+          "tmdb_type": {
+            "S": "tv"
+          },
+          "type": {
+            "S": "tv_miniseries"
+          },
+          "user_rating": {
+            "N": "6.4"
+          },
+          "year": {
+            "N": "2025"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "title:1687959"
+      },
+      "SK": {
+        "S": "record"
+      },
+      "data": {
+        "M": {
+          "genre_ids": {
+            "L": [
+              {
+                "S": "4"
+              },
+              {
+                "S": "6"
+              }
+            ]
+          },
+          "id": {
+            "N": "1687959"
+          },
+          "imdb_id": {
+            "S": "tt3566834"
+          },
+          "plot_overview": {
+            "S": "Four misfits find themselves struggling with ordinary problems when they are suddenly pulled through a mysterious portal into the Overworld: a bizarre, cubic wonderland that thrives on imagination. To get back home, they'll have to master this world while embarking on a magical quest with an unexpected, expert crafter, Steve."
+          },
+          "poster": {
+            "S": "https://cdn.watchmode.com/posters/01687959_poster_w342.jpg"
+          },
+          "source_ids": {
+            "L": [
+              {
+                "S": "203"
+              },
+              {
+                "S": "349"
+              }
+            ]
+          },
+          "title": {
+            "S": "A Minecraft Movie"
+          },
+          "tmdb_id": {
+            "N": "950387"
+          },
+          "tmdb_type": {
+            "S": "movie"
+          },
+          "type": {
+            "S": "movie"
+          },
+          "user_rating": {
+            "N": "5.8"
+          },
+          "year": {
+            "N": "2025"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "title:3199772"
+      },
+      "SK": {
+        "S": "record"
+      },
+      "data": {
+        "M": {
+          "genre_ids": {
+            "L": [
+              {
+                "S": "4"
+              },
+              {
+                "S": "6"
+              }
+            ]
+          },
+          "id": {
+            "N": "3199772"
+          },
+          "imdb_id": {
+            "S": "tt28093628"
+          },
+          "plot_overview": {
+            "S": "Former high school lab partners Marshall and Frances begin to unravel a conspiracy involving big pharma and the federal government to suppress knowledge of a rare mushroom that may hold the key to curing all the world’s diseases."
+          },
+          "poster": {
+            "S": "https://cdn.watchmode.com/posters/03199772_poster_w342.jpg"
+          },
+          "source_ids": {
+            "L": [
+              {
+                "S": "203"
+              },
+              {
+                "S": "349"
+              }
+            ]
+          },
+          "title": {
+            "S": "Common Side Effects"
+          },
+          "tmdb_id": {
+            "N": "228878"
+          },
+          "tmdb_type": {
+            "S": "tv"
+          },
+          "type": {
+            "S": "tv_series"
+          },
+          "user_rating": {
+            "N": "8.4"
+          },
+          "year": {
+            "N": "2024"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "title:3172241"
+      },
+      "SK": {
+        "S": "record"
+      },
+      "data": {
+        "M": {
+          "genre_ids": {
+            "L": [
+              {
+                "S": "4"
+              },
+              {
+                "S": "6"
+              }
+            ]
+          },
+          "id": {
+            "N": "3172241"
+          },
+          "imdb_id": {
+            "S": "tt13353168"
+          },
+          "plot_overview": {
+            "S": "When Helen Tudor-Fisk's life falls apart, she takes a job in a small suburban firm specialising in wills and probate assuming that, because the clients are dead she won't have to deal with people."
+          },
+          "poster": {
+            "S": "https://cdn.watchmode.com/posters/03172241_poster_w342.jpg"
+          },
+          "source_ids": {
+            "L": [
+              {
+                "S": "203"
+              },
+              {
+                "S": "349"
+              }
+            ]
+          },
+          "title": {
+            "S": "Fisk"
+          },
+          "tmdb_id": {
+            "N": "121040"
+          },
+          "tmdb_type": {
+            "S": "tv"
+          },
+          "type": {
+            "S": "tv_series"
+          },
+          "user_rating": {
+            "N": "8"
+          },
+          "year": {
+            "N": "2021"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "title:552585"
+      },
+      "SK": {
+        "S": "record"
+      },
+      "data": {
+        "M": {
+          "genre_ids": {
+            "L": [
+              {
+                "S": "4"
+              },
+              {
+                "S": "6"
+              }
+            ]
+          },
+          "id": {
+            "N": "552585"
+          },
+          "imdb_id": {
+            "S": "tt37649515"
+          },
+          "plot_overview": {
+            "S": "Comedian Jim Jefferies unleashes his thoughts on tiny mustaches, straight-guy struggles and why acting doesn't count as a real job."
+          },
+          "poster": {
+            "S": "https://cdn.watchmode.com/posters/0552585_poster_w342.jpg"
+          },
+          "source_ids": {
+            "L": [
+              {
+                "S": "203"
+              },
+              {
+                "S": "349"
+              }
+            ]
+          },
+          "title": {
+            "S": "Jim Jefferies: Two Limb Policy"
+          },
+          "tmdb_id": {
+            "N": "1517042"
+          },
+          "tmdb_type": {
+            "S": "movie"
+          },
+          "type": {
+            "S": "tv_special"
+          },
+          "user_rating": {
+            "N": "7"
+          },
+          "year": {
+            "N": "2025"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "title:1804101"
+      },
+      "SK": {
+        "S": "record"
+      },
+      "data": {
+        "M": {
+          "genre_ids": {
+            "L": [
+              {
+                "S": "4"
+              },
+              {
+                "S": "6"
+              }
+            ]
+          },
+          "id": {
+            "N": "1804101"
+          },
+          "imdb_id": {
+            "S": "tt31868189"
+          },
+          "plot_overview": {
+            "S": "Happy Gilmore isn't done with golf — not by a long shot. Since his retirement after his first Tour Championship win, Gilmore returns to finance his daughter's ballet classes."
+          },
+          "poster": {
+            "S": "https://cdn.watchmode.com/posters/01804101_poster_w342.jpg"
+          },
+          "source_ids": {
+            "L": [
+              {
+                "S": "203"
+              },
+              {
+                "S": "349"
+              }
+            ]
+          },
+          "title": {
+            "S": "Happy Gilmore 2"
+          },
+          "tmdb_id": {
+            "N": "1263256"
+          },
+          "tmdb_type": {
+            "S": "movie"
+          },
+          "type": {
+            "S": "movie"
+          },
+          "user_rating": {
+            "N": "6.3"
+          },
+          "year": {
+            "N": "2025"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "title:3182718"
+      },
+      "SK": {
+        "S": "record"
+      },
+      "data": {
+        "M": {
+          "genre_ids": {
+            "L": [
+              {
+                "S": "4"
+              },
+              {
+                "S": "6"
+              }
+            ]
+          },
+          "id": {
+            "N": "3182718"
+          },
+          "imdb_id": {
+            "S": "tt13443470"
+          },
+          "plot_overview": {
+            "S": "Smart, sarcastic and a little dead inside, Wednesday Addams investigates twisted mysteries while making new friends — and foes — at Nevermore Academy."
+          },
+          "poster": {
+            "S": "https://cdn.watchmode.com/posters/03182718_poster_w342.jpg"
+          },
+          "source_ids": {
+            "L": [
+              {
+                "S": "203"
+              },
+              {
+                "S": "349"
+              }
+            ]
+          },
+          "title": {
+            "S": "Wednesday"
+          },
+          "tmdb_id": {
+            "N": "119051"
+          },
+          "tmdb_type": {
+            "S": "tv"
+          },
+          "type": {
+            "S": "tv_series"
+          },
+          "user_rating": {
+            "N": "8.1"
+          },
+          "year": {
+            "N": "2022"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "title:3181658"
+      },
+      "SK": {
+        "S": "record"
+      },
+      "data": {
+        "M": {
+          "genre_ids": {
+            "L": [
+              {
+                "S": "4"
+              },
+              {
+                "S": "6"
+              }
+            ]
+          },
+          "id": {
+            "N": "3181658"
+          },
+          "imdb_id": {
+            "S": "tt8681148"
+          },
+          "plot_overview": {
+            "S": "The unvarnished truth of life as a doctor working in obstetrics and gynaecology."
+          },
+          "poster": {
+            "S": "https://cdn.watchmode.com/posters/03181658_poster_w342.jpg"
+          },
+          "source_ids": {
+            "L": [
+              {
+                "S": "203"
+              },
+              {
+                "S": "349"
+              }
+            ]
+          },
+          "title": {
+            "S": "This Is Going to Hurt"
+          },
+          "tmdb_id": {
+            "N": "154359"
+          },
+          "tmdb_type": {
+            "S": "tv"
+          },
+          "type": {
+            "S": "tv_miniseries"
+          },
+          "user_rating": {
+            "N": "8.2"
+          },
+          "year": {
+            "N": "2022"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "title:3171025"
+      },
+      "SK": {
+        "S": "record"
+      },
+      "data": {
+        "M": {
+          "genre_ids": {
+            "L": [
+              {
+                "S": "4"
+              },
+              {
+                "S": "6"
+              }
+            ]
+          },
+          "id": {
+            "N": "3171025"
+          },
+          "imdb_id": {
+            "S": "tt13146488"
+          },
+          "plot_overview": {
+            "S": "The continuing story of Peacemaker, a vainglorious superhero/supervillain who believes in peace at any cost — no matter how many people he has to kill. After a miraculous recovery from his duel with Bloodsport, Peacemaker soon discovers that his freedom comes at a price."
+          },
+          "poster": {
+            "S": "https://cdn.watchmode.com/posters/03171025_poster_w342.jpg"
+          },
+          "source_ids": {
+            "L": [
+              {
+                "S": "203"
+              },
+              {
+                "S": "349"
+              }
+            ]
+          },
+          "title": {
+            "S": "Peacemaker"
+          },
+          "tmdb_id": {
+            "N": "110492"
+          },
+          "tmdb_type": {
+            "S": "tv"
+          },
+          "type": {
+            "S": "tv_series"
+          },
+          "user_rating": {
+            "N": "8.2"
+          },
+          "year": {
+            "N": "2022"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "title:1584304"
+      },
+      "SK": {
+        "S": "record"
+      },
+      "data": {
+        "M": {
+          "genre_ids": {
+            "L": [
+              {
+                "S": "4"
+              },
+              {
+                "S": "6"
+              }
+            ]
+          },
+          "id": {
+            "N": "1584304"
+          },
+          "imdb_id": {
+            "S": "tt10648342"
+          },
+          "plot_overview": {
+            "S": "After his retirement is interrupted by Gorr the God Butcher, a galactic killer who seeks the extinction of the gods, Thor Odinson enlists the help of King Valkyrie, Korg, and ex-girlfriend Jane Foster, who now wields Mjolnir as the Mighty Thor. Together they embark upon a harrowing cosmic adventure to uncover the mystery of the God Butcher’s vengeance and stop him before it’s too late."
+          },
+          "poster": {
+            "S": "https://cdn.watchmode.com/posters/01584304_poster_w342.jpg"
+          },
+          "source_ids": {
+            "L": [
+              {
+                "S": "203"
+              },
+              {
+                "S": "349"
+              }
+            ]
+          },
+          "title": {
+            "S": "Thor: Love and Thunder"
+          },
+          "tmdb_id": {
+            "N": "616037"
+          },
+          "tmdb_type": {
+            "S": "movie"
+          },
+          "type": {
+            "S": "movie"
+          },
+          "user_rating": {
+            "N": "6.3"
+          },
+          "year": {
+            "N": "2022"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "title:548825"
+      },
+      "SK": {
+        "S": "record"
+      },
+      "data": {
+        "M": {
+          "genre_ids": {
+            "L": [
+              {
+                "S": "4"
+              },
+              {
+                "S": "6"
+              }
+            ]
+          },
+          "id": {
+            "N": "548825"
+          },
+          "imdb_id": {
+            "S": "tt8740614"
+          },
+          "plot_overview": {
+            "S": "A brilliant, eccentric detective must solve a murder in the White House residence — where the staff and guests at a state dinner are all suspects."
+          },
+          "poster": {
+            "S": "https://cdn.watchmode.com/posters/0548825_poster_w342.jpg"
+          },
+          "source_ids": {
+            "L": [
+              {
+                "S": "203"
+              },
+              {
+                "S": "349"
+              }
+            ]
+          },
+          "title": {
+            "S": "The Residence"
+          },
+          "tmdb_id": {
+            "N": "242054"
+          },
+          "tmdb_type": {
+            "S": "tv"
+          },
+          "type": {
+            "S": "tv_series"
+          },
+          "user_rating": {
+            "N": "7.6"
+          },
+          "year": {
+            "N": "2025"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "title:3267701"
+      },
+      "SK": {
+        "S": "record"
+      },
+      "data": {
+        "M": {
+          "genre_ids": {
+            "L": [
+              {
+                "S": "4"
+              },
+              {
+                "S": "6"
+              }
+            ]
+          },
+          "id": {
+            "N": "3267701"
+          },
+          "imdb_id": {
+            "S": "tt35677317"
+          },
+          "plot_overview": {
+            "S": "Discover the harrowing tales of those who survived Korea's gloomiest chapters, shedding a light on long-hidden truths."
+          },
+          "poster": {
+            "S": "https://cdn.watchmode.com/posters/03267701_poster_w342.jpg"
+          },
+          "source_ids": {
+            "L": [
+              {
+                "S": "203"
+              },
+              {
+                "S": "349"
+              }
+            ]
+          },
+          "title": {
+            "S": "The Echoes of Survivors: Inside Korea's Tragedies"
+          },
+          "tmdb_id": {
+            "N": "290682"
+          },
+          "tmdb_type": {
+            "S": "tv"
+          },
+          "type": {
+            "S": "tv_series"
+          },
+          "user_rating": {
+            "N": "7.1"
+          },
+          "year": {
+            "N": "2025"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "title:1617655"
+      },
+      "SK": {
+        "S": "record"
+      },
+      "data": {
+        "M": {
+          "genre_ids": {
+            "L": [
+              {
+                "S": "4"
+              },
+              {
+                "S": "6"
+              }
+            ]
+          },
+          "id": {
+            "N": "1617655"
+          },
+          "imdb_id": {
+            "S": "tt12888462"
+          },
+          "plot_overview": {
+            "S": "After years of swimming every day in the freezing ocean at the tip of Africa, Craig Foster meets an unlikely teacher: a young octopus who displays remarkable curiosity. Visiting her den and tracking her movements for months on end he eventually wins the animal’s trust and they develop a never-before-seen bond between human and wild animal."
+          },
+          "poster": {
+            "S": "https://cdn.watchmode.com/posters/01617655_poster_w342.jpg"
+          },
+          "source_ids": {
+            "L": [
+              {
+                "S": "203"
+              },
+              {
+                "S": "349"
+              }
+            ]
+          },
+          "title": {
+            "S": "My Octopus Teacher"
+          },
+          "tmdb_id": {
+            "N": "682110"
+          },
+          "tmdb_type": {
+            "S": "movie"
+          },
+          "type": {
+            "S": "movie"
+          },
+          "user_rating": {
+            "N": "8.2"
+          },
+          "year": {
+            "N": "2020"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "title:3250904"
+      },
+      "SK": {
+        "S": "record"
+      },
+      "data": {
+        "M": {
+          "genre_ids": {
+            "L": [
+              {
+                "S": "4"
+              },
+              {
+                "S": "6"
+              }
+            ]
+          },
+          "id": {
+            "N": "3250904"
+          },
+          "imdb_id": {
+            "S": "tt32376299"
+          },
+          "plot_overview": {
+            "S": "Team owner Jerry Jones' journey transforming the Cowboys. Leading players/coaches to 3 NFL titles in '90s, becoming innovative sports leader with world's most valuable franchise."
+          },
+          "poster": {
+            "S": "https://cdn.watchmode.com/posters/03250904_poster_w342.jpg"
+          },
+          "source_ids": {
+            "L": [
+              {
+                "S": "203"
+              },
+              {
+                "S": "349"
+              }
+            ]
+          },
+          "title": {
+            "S": "America's Team: The Gambler and His Cowboys"
+          },
+          "tmdb_id": {
+            "N": "279942"
+          },
+          "tmdb_type": {
+            "S": "tv"
+          },
+          "type": {
+            "S": "tv_miniseries"
+          },
+          "user_rating": {
+            "N": "8.1"
+          },
+          "year": {
+            "N": "2025"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "title:1824277"
+      },
+      "SK": {
+        "S": "record"
+      },
+      "data": {
+        "M": {
+          "genre_ids": {
+            "L": [
+              {
+                "S": "4"
+              },
+              {
+                "S": "6"
+              }
+            ]
+          },
+          "id": {
+            "N": "1824277"
+          },
+          "imdb_id": {
+            "S": "tt28607951"
+          },
+          "plot_overview": {
+            "S": "A young sex worker from Brooklyn gets her chance at a Cinderella story when she meets and impulsively marries the son of an oligarch. Once the news reaches Russia, her fairytale is threatened as his parents set out to get the marriage annulled."
+          },
+          "poster": {
+            "S": "https://cdn.watchmode.com/posters/01824277_poster_w342.jpg"
+          },
+          "source_ids": {
+            "L": [
+              {
+                "S": "203"
+              },
+              {
+                "S": "349"
+              }
+            ]
+          },
+          "title": {
+            "S": "Anora"
+          },
+          "tmdb_id": {
+            "N": "1064213"
+          },
+          "tmdb_type": {
+            "S": "movie"
+          },
+          "type": {
+            "S": "movie"
+          },
+          "user_rating": {
+            "N": "7.6"
+          },
+          "year": {
+            "N": "2024"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "title:1653388"
+      },
+      "SK": {
+        "S": "record"
+      },
+      "data": {
+        "M": {
+          "genre_ids": {
+            "L": [
+              {
+                "S": "4"
+              },
+              {
+                "S": "6"
+              }
+            ]
+          },
+          "id": {
+            "N": "1653388"
+          },
+          "imdb_id": {
+            "S": "tt12299608"
+          },
+          "plot_overview": {
+            "S": "Unlikely hero Mickey Barnes finds himself in the extraordinary circumstance of working for an employer who demands the ultimate commitment to the job… to die, for a living."
+          },
+          "poster": {
+            "S": "https://cdn.watchmode.com/posters/01653388_poster_w342.jpg"
+          },
+          "source_ids": {
+            "L": [
+              {
+                "S": "203"
+              },
+              {
+                "S": "349"
+              }
+            ]
+          },
+          "title": {
+            "S": "Mickey 17"
+          },
+          "tmdb_id": {
+            "N": "696506"
+          },
+          "tmdb_type": {
+            "S": "movie"
+          },
+          "type": {
+            "S": "movie"
+          },
+          "user_rating": {
+            "N": "6.9"
+          },
+          "year": {
+            "N": "2025"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "title:1893263"
+      },
+      "SK": {
+        "S": "record"
+      },
+      "data": {
+        "M": {
+          "genre_ids": {
+            "L": [
+              {
+                "S": "4"
+              },
+              {
+                "S": "6"
+              }
+            ]
+          },
+          "id": {
+            "N": "1893263"
+          },
+          "imdb_id": {
+            "S": "tt14205554"
+          },
+          "plot_overview": {
+            "S": "When K-pop superstars Rumi, Mira and Zoey aren't selling out stadiums, they're using their secret powers to protect their fans from supernatural threats."
+          },
+          "poster": {
+            "S": "https://cdn.watchmode.com/posters/01893263_poster_w342.jpg"
+          },
+          "source_ids": {
+            "L": [
+              {
+                "S": "203"
+              },
+              {
+                "S": "349"
+              }
+            ]
+          },
+          "title": {
+            "S": "KPop Demon Hunters"
+          },
+          "tmdb_id": {
+            "N": "803796"
+          },
+          "tmdb_type": {
+            "S": "movie"
+          },
+          "type": {
+            "S": "movie"
+          },
+          "user_rating": {
+            "N": "7.9"
+          },
+          "year": {
+            "N": "2025"
+          }
+        }
+      }
+    }
+  ],
+  "Count": 20,
+  "ScannedCount": 190,
+  "ConsumedCapacity": null
+}

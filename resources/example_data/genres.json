@@ -1,0 +1,784 @@
+{
+  "Items": [
+    {
+      "PK": {
+        "S": "genre:14"
+      },
+      "SK": {
+        "S": "Romance"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Romance"
+          },
+          "tmdb_id": {
+            "N": "10749"
+          },
+          "id": {
+            "N": "14"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:2"
+      },
+      "SK": {
+        "S": "Adventure"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Adventure"
+          },
+          "tmdb_id": {
+            "N": "12"
+          },
+          "id": {
+            "N": "2"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:12"
+      },
+      "SK": {
+        "S": "Music"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Music"
+          },
+          "tmdb_id": {
+            "N": "10402"
+          },
+          "id": {
+            "N": "12"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:29"
+      },
+      "SK": {
+        "S": "Sports"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Sports"
+          },
+          "tmdb_id": {
+            "N": "0"
+          },
+          "id": {
+            "N": "29"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:30"
+      },
+      "SK": {
+        "S": "Adult"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Adult"
+          },
+          "tmdb_id": {
+            "N": "0"
+          },
+          "id": {
+            "N": "30"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:36"
+      },
+      "SK": {
+        "S": "Nature"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Nature"
+          },
+          "tmdb_id": {
+            "N": "0"
+          },
+          "id": {
+            "N": "36"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:3"
+      },
+      "SK": {
+        "S": "Animation"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Animation"
+          },
+          "tmdb_id": {
+            "N": "16"
+          },
+          "id": {
+            "N": "3"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:5"
+      },
+      "SK": {
+        "S": "Crime"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Crime"
+          },
+          "tmdb_id": {
+            "N": "80"
+          },
+          "id": {
+            "N": "5"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:31"
+      },
+      "SK": {
+        "S": "Biography"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Biography"
+          },
+          "tmdb_id": {
+            "N": "0"
+          },
+          "id": {
+            "N": "31"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:11"
+      },
+      "SK": {
+        "S": "Horror"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Horror"
+          },
+          "tmdb_id": {
+            "N": "27"
+          },
+          "id": {
+            "N": "11"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:23"
+      },
+      "SK": {
+        "S": "Reality"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Reality"
+          },
+          "tmdb_id": {
+            "N": "10764"
+          },
+          "id": {
+            "N": "23"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:28"
+      },
+      "SK": {
+        "S": "Game Show"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Game Show"
+          },
+          "tmdb_id": {
+            "N": "0"
+          },
+          "id": {
+            "N": "28"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:1"
+      },
+      "SK": {
+        "S": "Action"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Action"
+          },
+          "tmdb_id": {
+            "N": "28"
+          },
+          "id": {
+            "N": "1"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:21"
+      },
+      "SK": {
+        "S": "Kids"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Kids"
+          },
+          "tmdb_id": {
+            "N": "10762"
+          },
+          "id": {
+            "N": "21"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:41"
+      },
+      "SK": {
+        "S": "War & Politics"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "War & Politics"
+          },
+          "tmdb_id": {
+            "N": "10768"
+          },
+          "id": {
+            "N": "41"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:33"
+      },
+      "SK": {
+        "S": "Anime"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Anime"
+          },
+          "tmdb_id": {
+            "N": "0"
+          },
+          "id": {
+            "N": "33"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:17"
+      },
+      "SK": {
+        "S": "Thriller"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Thriller"
+          },
+          "tmdb_id": {
+            "N": "53"
+          },
+          "id": {
+            "N": "17"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:37"
+      },
+      "SK": {
+        "S": "Supernatural"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Supernatural"
+          },
+          "tmdb_id": {
+            "N": "0"
+          },
+          "id": {
+            "N": "37"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:10"
+      },
+      "SK": {
+        "S": "History"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "History"
+          },
+          "tmdb_id": {
+            "N": "36"
+          },
+          "id": {
+            "N": "10"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:19"
+      },
+      "SK": {
+        "S": "Western"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Western"
+          },
+          "tmdb_id": {
+            "N": "37"
+          },
+          "id": {
+            "N": "19"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:25"
+      },
+      "SK": {
+        "S": "Soap"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Soap"
+          },
+          "tmdb_id": {
+            "N": "10766"
+          },
+          "id": {
+            "N": "25"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:4"
+      },
+      "SK": {
+        "S": "Comedy"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Comedy"
+          },
+          "tmdb_id": {
+            "N": "35"
+          },
+          "id": {
+            "N": "4"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:6"
+      },
+      "SK": {
+        "S": "Documentary"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Documentary"
+          },
+          "tmdb_id": {
+            "N": "99"
+          },
+          "id": {
+            "N": "6"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:15"
+      },
+      "SK": {
+        "S": "Science Fiction"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Science Fiction"
+          },
+          "tmdb_id": {
+            "N": "878"
+          },
+          "id": {
+            "N": "15"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:35"
+      },
+      "SK": {
+        "S": "Travel"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Travel"
+          },
+          "tmdb_id": {
+            "N": "0"
+          },
+          "id": {
+            "N": "35"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:34"
+      },
+      "SK": {
+        "S": "Food"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Food"
+          },
+          "tmdb_id": {
+            "N": "0"
+          },
+          "id": {
+            "N": "34"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:22"
+      },
+      "SK": {
+        "S": "News"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "News"
+          },
+          "tmdb_id": {
+            "N": "10763"
+          },
+          "id": {
+            "N": "22"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:38"
+      },
+      "SK": {
+        "S": "TV Movie"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "TV Movie"
+          },
+          "tmdb_id": {
+            "N": "10770"
+          },
+          "id": {
+            "N": "38"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:26"
+      },
+      "SK": {
+        "S": "Talk"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Talk"
+          },
+          "tmdb_id": {
+            "N": "10767"
+          },
+          "id": {
+            "N": "26"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:9"
+      },
+      "SK": {
+        "S": "Fantasy"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Fantasy"
+          },
+          "tmdb_id": {
+            "N": "14"
+          },
+          "id": {
+            "N": "9"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:40"
+      },
+      "SK": {
+        "S": "Sci-Fi & Fantasy"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Sci-Fi & Fantasy"
+          },
+          "tmdb_id": {
+            "N": "10765"
+          },
+          "id": {
+            "N": "40"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:32"
+      },
+      "SK": {
+        "S": "Musical"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Musical"
+          },
+          "tmdb_id": {
+            "N": "0"
+          },
+          "id": {
+            "N": "32"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:8"
+      },
+      "SK": {
+        "S": "Family"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Family"
+          },
+          "tmdb_id": {
+            "N": "10751"
+          },
+          "id": {
+            "N": "8"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:7"
+      },
+      "SK": {
+        "S": "Drama"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Drama"
+          },
+          "tmdb_id": {
+            "N": "18"
+          },
+          "id": {
+            "N": "7"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:13"
+      },
+      "SK": {
+        "S": "Mystery"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Mystery"
+          },
+          "tmdb_id": {
+            "N": "9648"
+          },
+          "id": {
+            "N": "13"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:18"
+      },
+      "SK": {
+        "S": "War"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "War"
+          },
+          "tmdb_id": {
+            "N": "10752"
+          },
+          "id": {
+            "N": "18"
+          }
+        }
+      }
+    },
+    {
+      "PK": {
+        "S": "genre:39"
+      },
+      "SK": {
+        "S": "Action & Adventure"
+      },
+      "data": {
+        "M": {
+          "name": {
+            "S": "Action & Adventure"
+          },
+          "tmdb_id": {
+            "N": "10759"
+          },
+          "id": {
+            "N": "39"
+          }
+        }
+      }
+    }
+  ],
+  "Count": 37,
+  "ScannedCount": 190,
+  "ConsumedCapacity": null
+}

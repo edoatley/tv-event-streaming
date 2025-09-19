@@ -1,0 +1,7 @@
+{
+  "TitleRecommendationsConsumerFunction": {
+    "KINESIS_STREAM_NAME": "ProgrammeDataStreamLocal",
+    "DYNAMODB_TABLE_NAME": "UKTVProgrammesLocal",
+    "AWS_ENDPOINT_URL": "http://localstack:4566"
+  }
+}

@@ -1,0 +1,35 @@
+.title-card {
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+.title-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.title-image {
+    height: 300px;
+    object-fit: cover;
+}
+.rating-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 193, 7, 0.9);
+    color: #000;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: bold;
+}
+.preferences-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+.admin-panel .card {
+    margin-bottom: 1.5rem;
+}
+.status-display {
+    font-style: italic;
+    color: #6c757d;
+}

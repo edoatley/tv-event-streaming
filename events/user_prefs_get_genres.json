@@ -1,0 +1,15 @@
+{
+  "httpMethod": "GET",
+  "path": "/genres",
+  "resource": "/genres",
+  "queryStringParameters": null,
+  "headers": {
+    "Accept": "application/json"
+  },
+  "requestContext": {
+    "httpMethod": "GET",
+    "path": "/Prod/genres",
+    "resourcePath": "/genres",
+    "requestId": "d8b82c60-86e9-4b24-9c9c-efd83e290b1e"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "httpMethod": "GET",
+  "path": "/preferences",
+  "resource": "/preferences",
+  "headers": {
+    "Accept": "application/json",
+    "Authorization": "ey...<a_valid_jwt_token>...tQ"
+  },
+  "requestContext": {
+    "httpMethod": "GET",
+    "path": "/Prod/preferences",
+    "resourcePath": "/preferences",
+    "requestId": "e9c93d71-97f0-4c35-adad-f0e94f301c2f",
+    "authorizer": {
+      "claims": {
+        "sub": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+        "email_verified": "true",
+        "iss": "https://cognito-idp.eu-west-2.amazonaws.com/eu-west-2_Re96F4z3a",
+        "cognito:username": "test.user@example.com",
+        "aud": "2lcrrfq92ikt67acq3ibceiq7b",
+        "token_use": "id",
+        "email": "test.user@example.com"
+      }
+    }
+  }
+}

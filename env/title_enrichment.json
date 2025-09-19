@@ -1,0 +1,8 @@
+{
+  "TitleEnrichmentFunction": {
+    "DYNAMODB_TABLE_NAME": "UKTVProgrammesLocal",
+    "WATCHMODE_API_KEY_SECRET_ARN": "local/WatchModeApiKey",
+    "AWS_ENDPOINT_URL": "http://localstack:4566",
+    "WATCHMODE_HOSTNAME": "https://api.watchmode.com"
+  }
+}

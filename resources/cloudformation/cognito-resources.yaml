@@ -1,0 +1,123 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Handles all Cognito User Pool resources for the Event Streaming App.
+
+Parameters:
+  RootStackName:
+    Type: String
+    Description: The name of the root stack, used for naming resources.
+  WebsiteDistributionDomainName:
+    Type: String
+    Description: The domain name of the CloudFront distribution for callback URLs.
+  TestUserName:
+    Type: String
+    Description: "The username of the pre-created test user"
+  AdminUserName:
+    Type: String
+    Description: "The username for the pre-created admin user."
+
+Resources:
+  UserPreferencesUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub "${RootStackName}-UserPool"
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: true
+
+  UserPreferencesUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub "${RootStackName}-AppClient"
+      UserPoolId: !Ref UserPreferencesUserPool
+      GenerateSecret: false
+      AllowedOAuthFlowsUserPoolClient: true
+      SupportedIdentityProviders: [COGNITO]
+      CallbackURLs: [!Sub "https://${WebsiteDistributionDomainName}/index.html", "http://localhost:8000/index.html"]
+      LogoutURLs: [!Sub "https://${WebsiteDistributionDomainName}/index.html", "http://localhost:8000/index.html"]
+      AllowedOAuthFlows: [implicit, code]
+      AllowedOAuthScopes: [openid, email, profile]
+
+  TestScriptUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub "${RootStackName}-TestScriptClient"
+      UserPoolId: !Ref UserPreferencesUserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      UserPoolId: !Ref UserPreferencesUserPool
+      # The domain must be globally unique. We append the unique stack ID to ensure this.
+      Domain: !Sub
+        - 'uktv-guide-${Suffix}'
+        - { Suffix: !Select [2, !Split ['/', !Ref 'AWS::StackId']] }
+
+  TestUser:
+    Type: AWS::Cognito::UserPoolUser
+    Properties:
+      UserPoolId: !Ref UserPreferencesUserPool
+      Username: !Ref TestUserName
+      UserAttributes:
+        - Name: email
+          Value: !Ref TestUserName
+        - Name: email_verified
+          Value: "true"
+
+  SecurityAdminsGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: SecurityAdmins
+      UserPoolId: !Ref UserPreferencesUserPool
+      Description: "Group for application administrators with access to the admin screen."
+
+  AdminUser:
+    Type: AWS::Cognito::UserPoolUser
+    Properties:
+      UserPoolId: !Ref UserPreferencesUserPool
+      Username: !Ref AdminUserName
+      UserAttributes:
+        - Name: email
+          Value: !Ref AdminUserName
+        - Name: email_verified
+          Value: "true"
+
+  AdminUserToGroupAttachment:
+    Type: AWS::Cognito::UserPoolUserToGroupAttachment
+    Properties:
+      GroupName: !Ref SecurityAdminsGroup
+      Username: !Ref AdminUserName
+      UserPoolId: !Ref UserPreferencesUserPool
+
+Outputs:
+  UserPoolId:
+    Description: "The ID of the Cognito User Pool"
+    Value: !Ref UserPreferencesUserPool
+  UserPoolArn:
+    Description: "The ARN of the Cognito User Pool"
+    Value: !GetAtt UserPreferencesUserPool.Arn
+  UserPoolDomain:
+    Description: "The full domain of the Cognito User Pool"
+    Value: !Sub "${UserPoolDomain}.auth.${AWS::Region}.amazoncognito.com"
+  TestUsername:
+    Description: "The username of the pre-created test user"
+    Value: !Ref TestUserName
+  AdminUsername:
+    Description: "The username of the pre-created admin user"
+    Value: !Ref AdminUserName
+  UserPoolClientId:
+    Description: "The ID of the Cognito User Pool App Client for the web app"
+    Value: !Ref UserPreferencesUserPoolClient
+  TestScriptUserPoolClientId:
+    Description: "The ID of the Cognito User Pool App Client for test scripts"
+    Value: !Ref TestScriptUserPoolClient

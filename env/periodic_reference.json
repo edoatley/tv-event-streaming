@@ -1,0 +1,8 @@
+{
+  "PeriodicReferenceFunction": {
+    "DYNAMODB_TABLE_NAME": "UKTVProgrammesLocal",
+    "WATCHMODE_API_KEY_SECRET_ARN": "local/WatchModeApiKey",
+    "TABLE_NAME": "UKTVProgrammesLocal",
+    "AWS_ENDPOINT_URL": "http://localstack:4566"
+  }
+}

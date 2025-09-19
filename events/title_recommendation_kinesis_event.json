@@ -1,0 +1,36 @@
+{
+  "Records": [
+    {
+      "kinesis": {
+        "kinesisSchemaVersion": "1.0",
+        "partitionKey": "3184039",
+        "sequenceNumber": "49664244735039333844253464507911923352226958350235992098",
+        "data": "eyJoZWFkZXIiOnsicHVibGlzaGluZ0NvbXBvbmVudCI6IlVzZXJQcmVmc1RpdGxlSW5nZXN0aW9uRnVuY3Rpb24iLCJwdWJsaXNoVGltZXN0YW1wIjoiMjAyNS0wNy0wNFQxNjowMjo1MS44NTVaIiwicHVibGlzaENhdXNlIjoic2NoZWR1bGVkX3VzZXJfcHJlZnNfaW5nZXN0aW9uIn0sInBheWxvYWQiOnsiaWQiOjMxODQwMzksInRpdGxlIjoiTWF2ZXJpWCIsInllYXIiOjIwMjIsImltZGJfaWQiOiJ0dDE1MzczODY0IiwidG1kYl9pZCI6MTk2NTU2LCJ0bWRiX3R5cGUiOiJ0diIsInR5cGUiOiJ0dl9zZXJpZXMifX0=",
+        "approximateArrivalTimestamp": 1678886400.123
+      },
+      "eventSource": "aws:kinesis",
+      "eventVersion": "1.0",
+      "eventID": "shardId-000000000000:49664244735039333844253464507911923352226958350235992098",
+      "eventName": "aws:kinesis:record",
+      "invokeIdentityArn": "arn:aws:iam::123456789012:role/lambda-role",
+      "awsRegion": "eu-west-2",
+      "eventSourceARN": "arn:aws:kinesis:eu-west-2:123456789012:stream/ProgrammeDataStream"
+    },
+    {
+      "kinesis": {
+        "kinesisSchemaVersion": "1.0",
+        "partitionKey": "9876543",
+        "sequenceNumber": "49664244735039333844253464507911923352226958350235992099",
+        "data": "eyJoZWFkZXIiOnsicHVibGlzaGluZ0NvbXBvbmVudCI6IlVzZXJQcmVmc1RpdGxlSW5nZXN0aW9uRnVuY3Rpb24iLCJwdWJsaXNoVGltZXN0YW1wIjoiMjAyNS0wNy0wNFQxNjowMzoxMi4xMTRaIiwicHVibGlzaENhdXNlIjoic2NoZWR1bGVkX3VzZXJfcHJlZnNfaW5nZXN0aW9uIn0sInBheWxvYWQiOnsiaWQiOjk4NzY1NDMsInRpdGxlIjoiQW5vdGhlciBHaG9zdGx5IEV2ZW50IiwidHlwZSI6Im1vdmllIn19",
+        "approximateArrivalTimestamp": 1678886401.456
+      },
+      "eventSource": "aws:kinesis",
+      "eventVersion": "1.0",
+      "eventID": "shardId-000000000000:49664244735039333844253464507911923352226958350235992099",
+      "eventName": "aws:kinesis:record",
+      "invokeIdentityArn": "arn:aws:iam::123456789012:role/lambda-role",
+      "awsRegion": "eu-west-2",
+      "eventSourceARN": "arn:aws:kinesis:eu-west-2:123456789012:stream/ProgrammeDataStream"
+    }
+  ]
+}

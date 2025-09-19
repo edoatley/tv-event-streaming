@@ -1,0 +1,185 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: "Admin API for administrative tasks"
+
+Parameters:
+  RootStackName:
+    Type: String
+    Description: "Name of the root stack, used for constructing resource names."
+  ProgrammesTableName:
+    Type: String
+    Description: "Name of the DynamoDB table for programmes."
+  ProgrammesTableArn:
+    Type: String
+    Description: "ARN of the DynamoDB table for programmes."
+  PeriodicReferenceFunctionArn:
+    Type: String
+    Description: "ARN of the Periodic Reference function to invoke."
+  UserPrefsTitleIngestionFunctionArn:
+    Type: String
+    Description: "ARN of the User Prefs Title Ingestion function to invoke."
+  TitleEnrichmentFunctionArn:
+    Type: String
+    Description: "ARN of the Title Enrichment function to invoke."
+  UserPoolArn:
+    Type: String
+    Description: "ARN of the Cognito User Pool for authorization."
+  StageName:
+    Type: String
+    Default: Prod
+
+Resources:
+  AdminApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref StageName
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Ref UserPoolArn
+      AccessLogSetting:
+        DestinationArn: !GetAtt AdminApiAccessLogGroup.Arn
+        Format: '{"requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "caller":"$context.identity.caller", "user":"$context.identity.user","requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath", "status":"$context.status","protocol":"$context.protocol", "responseLength":"$context.responseLength"}'
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          LoggingLevel: INFO
+          DataTraceEnabled: true
+          MetricsEnabled: true
+
+  AdminApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/api-gateway/${AdminApi}"
+      RetentionInDays: 7
+
+  AdminCorsOptionsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.12
+      # This function's only job is to return the correct CORS headers for preflight OPTIONS requests.
+      InlineCode: |
+        import json
+        def handler(event, context):
+            return {
+                "statusCode": 204,
+                "headers": {
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+                    "Access-Control-Allow-Methods": "GET,PUT,POST,OPTIONS,DELETE"
+                },
+                "body": ""
+            }
+      Events:
+        OptionsCatchAll:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /{proxy+}
+            Method: options
+            Auth:
+              Authorizer: NONE
+
+  AdminLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${RootStackName}-AdminLambdaRole"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AdminLambdaBasicExecution
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${RootStackName}-AdminLambda:*"
+        - PolicyName: AdminLambdaDynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:DescribeTable
+                Resource: !Ref ProgrammesTableArn
+              - Effect: Allow
+                Action:
+                  - dynamodb:ListTables
+                Resource: "*"
+        - PolicyName: AdminLambdaInvokeOtherLambdas
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - !Ref PeriodicReferenceFunctionArn
+                  - !Ref UserPrefsTitleIngestionFunctionArn
+                  - !Ref TitleEnrichmentFunctionArn
+
+  AdminLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${RootStackName}-AdminLambda"
+      CodeUri: ../../src/admin_lambda/
+      Handler: admin_lambda.lambda_handler
+      Runtime: python3.11
+      MemorySize: 128
+      Timeout: 30
+      Role: !GetAtt AdminLambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          PROGRAMMES_TABLE_NAME: !Ref ProgrammesTableName
+          PROGRAMMES_TABLE_ARN: !Ref ProgrammesTableArn
+          REFERENCE_DATA_LAMBDA_ARN: !Ref PeriodicReferenceFunctionArn
+          TITLE_DATA_REFRESH_LAMBDA_ARN: !Ref UserPrefsTitleIngestionFunctionArn
+          TITLE_ENRICHMENT_LAMBDA_ARN: !Ref TitleEnrichmentFunctionArn
+      Events:
+        AdminApiGetSummary:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/dynamodb/summary
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminApiPostReferenceRefresh:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/reference/refresh
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminApiPostTitleRefresh:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/titles/refresh
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminApiPostTitleEnrich:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/titles/enrich
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+Outputs:
+  ApiEndpoint:
+    Description: "The Admin API endpoint URL"
+    Value: !Sub "https://${AdminApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"

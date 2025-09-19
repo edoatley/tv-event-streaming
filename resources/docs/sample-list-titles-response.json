@@ -1,0 +1,682 @@
+{
+  "titles": [
+    {
+      "id": 3231588,
+      "title": "Olympo",
+      "year": 2025,
+      "imdb_id": "tt33029688",
+      "tmdb_id": 259669,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3224215,
+      "title": "America's Sweethearts: Dallas Cowboys Cheerleaders",
+      "year": 2024,
+      "imdb_id": "tt32146518",
+      "tmdb_id": 252257,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3260068,
+      "title": "Tour de France: Unchained",
+      "year": 2023,
+      "imdb_id": "tt19296314",
+      "tmdb_id": 225335,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 519450,
+      "title": "The Last Dance",
+      "year": 2020,
+      "imdb_id": "tt8420184",
+      "tmdb_id": 79525,
+      "tmdb_type": "tv",
+      "type": "tv_miniseries"
+    },
+    {
+      "id": 3234804,
+      "title": "Mr. McMahon",
+      "year": 2024,
+      "imdb_id": "tt33301469",
+      "tmdb_id": 263089,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3152478,
+      "title": "Spinning Out",
+      "year": 2020,
+      "imdb_id": "tt9117054",
+      "tmdb_id": 83050,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 537711,
+      "title": "Formula 1: Drive to Survive",
+      "year": 2019,
+      "imdb_id": "tt8289930",
+      "tmdb_id": 87083,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3243070,
+      "title": "Running Point",
+      "year": 2025,
+      "imdb_id": "tt14879018",
+      "tmdb_id": 244623,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 349971,
+      "title": "Haikyu!!",
+      "year": 2014,
+      "imdb_id": "tt3398540",
+      "tmdb_id": 60863,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 345101,
+      "title": "GLOW",
+      "year": 2017,
+      "imdb_id": "tt5770786",
+      "tmdb_id": 70573,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3206988,
+      "title": "Beckham",
+      "year": 2023,
+      "imdb_id": "tt14524712",
+      "tmdb_id": 235345,
+      "tmdb_type": "tv",
+      "type": "tv_miniseries"
+    },
+    {
+      "id": 3174636,
+      "title": "Racket Boys",
+      "year": 2021,
+      "imdb_id": "tt14482414",
+      "tmdb_id": 125437,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 539560,
+      "title": "The English Game",
+      "year": 2020,
+      "imdb_id": "tt8403664",
+      "tmdb_id": 100052,
+      "tmdb_type": "tv",
+      "type": "tv_miniseries"
+    },
+    {
+      "id": 365517,
+      "title": "Kuroko's Basketball",
+      "year": 2012,
+      "imdb_id": "tt2348803",
+      "tmdb_id": 45783,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 545969,
+      "title": "Senna",
+      "year": 2024,
+      "imdb_id": "tt13024830",
+      "tmdb_id": 211039,
+      "tmdb_type": "tv",
+      "type": "tv_miniseries"
+    },
+    {
+      "id": 3198382,
+      "title": "Quarterback",
+      "year": 2023,
+      "imdb_id": "tt26777035",
+      "tmdb_id": 220998,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3236158,
+      "title": "Blue Box",
+      "year": 2024,
+      "imdb_id": "tt32639706",
+      "tmdb_id": 207347,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 551368,
+      "title": "Court of Gold",
+      "year": 2025,
+      "imdb_id": "tt32376394",
+      "tmdb_id": 282846,
+      "tmdb_type": "tv",
+      "type": "tv_miniseries"
+    },
+    {
+      "id": 4146381,
+      "title": "Dare Me",
+      "year": 2019,
+      "imdb_id": "tt2983222",
+      "tmdb_id": 95259,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 350006,
+      "title": "Fighting Spirit",
+      "year": 2000,
+      "imdb_id": "tt0481256",
+      "tmdb_id": 42705,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3142696,
+      "title": "Weightlifting Fairy Kim Bok-Joo",
+      "year": 2016,
+      "imdb_id": "tt6157148",
+      "tmdb_id": 68349,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3172723,
+      "title": "Run On",
+      "year": 2020,
+      "imdb_id": "tt13271834",
+      "tmdb_id": 113240,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3166459,
+      "title": "Cheer",
+      "year": 2020,
+      "imdb_id": "tt11426660",
+      "tmdb_id": 97401,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 323403,
+      "title": "Club de Cuervos",
+      "year": 2015,
+      "imdb_id": "tt4680240",
+      "tmdb_id": 63314,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3171981,
+      "title": "Last Chance U: Basketball",
+      "year": 2021,
+      "imdb_id": "tt13087512",
+      "tmdb_id": 118876,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 548843,
+      "title": "Captains of the World",
+      "year": 2023,
+      "imdb_id": "tt26218818",
+      "tmdb_id": 242238,
+      "tmdb_type": "tv",
+      "type": "tv_miniseries"
+    },
+    {
+      "id": 368151,
+      "title": "Last Chance U",
+      "year": 2016,
+      "imdb_id": "tt5863126",
+      "tmdb_id": 67027,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3157430,
+      "title": "Sunderland 'Til I Die",
+      "year": 2018,
+      "imdb_id": "tt8914684",
+      "tmdb_id": 84777,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3164002,
+      "title": "Hyperdrive",
+      "year": 2019,
+      "imdb_id": "tt8911552",
+      "tmdb_id": 91766,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3168389,
+      "title": "Falling Into Your Smile",
+      "year": 2021,
+      "imdb_id": "tt11290960",
+      "tmdb_id": 95486,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 549472,
+      "title": "Simone Biles Rising",
+      "year": 2024,
+      "imdb_id": "tt32376945",
+      "tmdb_id": 254930,
+      "tmdb_type": "tv",
+      "type": "tv_miniseries"
+    },
+    {
+      "id": 3192992,
+      "title": "Physical: 100",
+      "year": 2023,
+      "imdb_id": "tt25274446",
+      "tmdb_id": 210905,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3189201,
+      "title": "Sanctuary",
+      "year": 2023,
+      "imdb_id": "tt16970638",
+      "tmdb_id": 210269,
+      "tmdb_type": "tv",
+      "type": "tv_miniseries"
+    },
+    {
+      "id": 3193486,
+      "title": "Full Swing",
+      "year": 2023,
+      "imdb_id": "tt17050700",
+      "tmdb_id": 218137,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 543354,
+      "title": "Neymar: The Perfect Chaos",
+      "year": 2022,
+      "imdb_id": "tt16428640",
+      "tmdb_id": 153519,
+      "tmdb_type": "tv",
+      "type": "tv_miniseries"
+    },
+    {
+      "id": 3201019,
+      "title": "The Cage",
+      "year": 2024,
+      "imdb_id": "tt28288478",
+      "tmdb_id": 230003,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3256257,
+      "title": "The Clubhouse: A Year with the Red Sox",
+      "year": 2025,
+      "imdb_id": "tt31186005",
+      "tmdb_id": 282628,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3161439,
+      "title": "Losers",
+      "year": 2019,
+      "imdb_id": "tt9817218",
+      "tmdb_id": 87216,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3267900,
+      "title": "Power Moves with Shaquille O'Neal",
+      "year": 2025,
+      "imdb_id": "tt36852036",
+      "tmdb_id": 290865,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3232825,
+      "title": "Football Parents",
+      "year": 2025,
+      "imdb_id": "tt33078939",
+      "tmdb_id": 261009,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 547803,
+      "title": "McGregor Forever",
+      "year": 2023,
+      "imdb_id": "tt27599123",
+      "tmdb_id": 225292,
+      "tmdb_type": "tv",
+      "type": "tv_miniseries"
+    },
+    {
+      "id": 546260,
+      "title": "FIFA Uncovered",
+      "year": 2022,
+      "imdb_id": "tt22872838",
+      "tmdb_id": 213193,
+      "tmdb_type": "tv",
+      "type": "tv_miniseries"
+    },
+    {
+      "id": 1691521,
+      "title": "Terim",
+      "year": 2022,
+      "imdb_id": "tt14650054",
+      "tmdb_id": 209032,
+      "tmdb_type": "tv",
+      "type": "tv_miniseries"
+    },
+    {
+      "id": 3165958,
+      "title": "Stove League",
+      "year": 2019,
+      "imdb_id": "tt11378124",
+      "tmdb_id": 95484,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3212927,
+      "title": "Rising Impact",
+      "year": 2024,
+      "imdb_id": "tt30400535",
+      "tmdb_id": 241138,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3204457,
+      "title": "Wrestlers",
+      "year": 2023,
+      "imdb_id": "tt28711468",
+      "tmdb_id": 233051,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3236391,
+      "title": "Polo",
+      "year": 2024,
+      "imdb_id": "tt34729811",
+      "tmdb_id": 270976,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3172103,
+      "title": "Navillera",
+      "year": 2021,
+      "imdb_id": "tt13885302",
+      "tmdb_id": 119464,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3215228,
+      "title": "NASCAR: Full Speed",
+      "year": 2024,
+      "imdb_id": "tt28712944",
+      "tmdb_id": 243348,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3204086,
+      "title": "Heart of Invictus",
+      "year": 2023,
+      "imdb_id": "tt14491228",
+      "tmdb_id": 232745,
+      "tmdb_type": "tv",
+      "type": "tv_miniseries"
+    },
+    {
+      "id": 3164299,
+      "title": "Apache: The Life of Carlos Tevez",
+      "year": 2019,
+      "imdb_id": "tt10715172",
+      "tmdb_id": 92443,
+      "tmdb_type": "tv",
+      "type": "tv_miniseries"
+    },
+    {
+      "id": 3215820,
+      "title": "Six Nations: Full Contact",
+      "year": 2024,
+      "imdb_id": "tt26218826",
+      "tmdb_id": 242394,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3253735,
+      "title": "Carlos Alcaraz: My Way",
+      "year": 2025,
+      "imdb_id": "tt31724374",
+      "tmdb_id": 280885,
+      "tmdb_type": "tv",
+      "type": "tv_miniseries"
+    },
+    {
+      "id": 3222745,
+      "title": "The Queen of Villains",
+      "year": 2024,
+      "imdb_id": "tt21187072",
+      "tmdb_id": 250783,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3220236,
+      "title": "Together: Treble Winners",
+      "year": 2024,
+      "imdb_id": "tt31579076",
+      "tmdb_id": 248294,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 1702139,
+      "title": "Bill Russell: Legend",
+      "year": 2023,
+      "imdb_id": "tt18271440",
+      "tmdb_id": 220030,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3151692,
+      "title": "Fightworld",
+      "year": 2018,
+      "imdb_id": "tt9047526",
+      "tmdb_id": 83061,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3253724,
+      "title": "The Hooligan",
+      "year": 2025,
+      "imdb_id": "tt35256070",
+      "tmdb_id": 280872,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3136887,
+      "title": "Ultimate Beastmaster",
+      "year": 2017,
+      "imdb_id": "tt5607970",
+      "tmdb_id": 69886,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3216966,
+      "title": "Sprint: The World's Fastest Humans",
+      "year": 2024,
+      "imdb_id": "tt28669701",
+      "tmdb_id": 245251,
+      "tmdb_type": "tv",
+      "type": "tv_miniseries"
+    },
+    {
+      "id": 3264918,
+      "title": "Race for the Crown",
+      "year": 2025,
+      "imdb_id": "tt36414438",
+      "tmdb_id": 288106,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3192256,
+      "title": "Break Point",
+      "year": 2023,
+      "imdb_id": "tt17048442",
+      "tmdb_id": 216386,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3119116,
+      "title": "The Ballad of Hugo Sánchez",
+      "year": 2018,
+      "imdb_id": "tt8498114",
+      "tmdb_id": 80280,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3236389,
+      "title": "Aaron Rodgers: Enigma",
+      "year": 2024,
+      "imdb_id": "tt33350486",
+      "tmdb_id": 270973,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3170890,
+      "title": "The Playbook",
+      "year": 2020,
+      "imdb_id": "tt12930602",
+      "tmdb_id": 110193,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3155730,
+      "title": "Selection Day",
+      "year": 2018,
+      "imdb_id": "tt8004628",
+      "tmdb_id": 84310,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3163082,
+      "title": "Les de l'hoquei",
+      "year": 2019,
+      "imdb_id": "tt9486226",
+      "tmdb_id": 90129,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3178203,
+      "title": "Bad Sport",
+      "year": 2021,
+      "imdb_id": "tt15402912",
+      "tmdb_id": 133358,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 551667,
+      "title": "The Comeback: 2004 Boston Red Sox",
+      "year": 2024,
+      "imdb_id": "tt31186041",
+      "tmdb_id": 270977,
+      "tmdb_type": "tv",
+      "type": "tv_miniseries"
+    },
+    {
+      "id": 3262267,
+      "title": "Go!",
+      "year": 2025,
+      "imdb_id": "tt27505053",
+      "tmdb_id": 285906,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3264157,
+      "title": "Battle Camp",
+      "year": 2025,
+      "imdb_id": "tt32501190",
+      "tmdb_id": 287366,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3213311,
+      "title": "Like Flowers in Sand",
+      "year": 2023,
+      "imdb_id": "tt26924748",
+      "tmdb_id": 224900,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 3166515,
+      "title": "My Perfect Landing",
+      "year": 2020,
+      "imdb_id": "tt10268080",
+      "tmdb_id": 97543,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    },
+    {
+      "id": 538883,
+      "title": "Maradona in Mexico",
+      "year": 2019,
+      "imdb_id": "tt11168104",
+      "tmdb_id": 95387,
+      "tmdb_type": "tv",
+      "type": "tv_miniseries"
+    },
+    {
+      "id": 3184039,
+      "title": "MaveriX",
+      "year": 2022,
+      "imdb_id": "tt15373864",
+      "tmdb_id": 196556,
+      "tmdb_type": "tv",
+      "type": "tv_series"
+    }
+  ],
+  "page": 1,
+  "total_pages": 1,
+  "total_results": 75
+}

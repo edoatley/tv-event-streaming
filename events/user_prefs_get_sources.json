@@ -1,0 +1,15 @@
+{
+  "httpMethod": "GET",
+  "path": "/sources",
+  "resource": "/sources",
+  "queryStringParameters": null,
+  "headers": {
+    "Accept": "application/json"
+  },
+  "requestContext": {
+    "httpMethod": "GET",
+    "path": "/Prod/sources",
+    "resourcePath": "/sources",
+    "requestId": "c7a71c59-75d8-4a13-8c8b-dfd72e189a0d"
+  }
+}
