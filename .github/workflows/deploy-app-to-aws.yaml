@@ -13,15 +13,13 @@ permissions:
 
 jobs:
   deploy:
+    env:
+      WATCHMODE_API_KEY: ${{ secrets.WATCHMODE_API_KEY }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 1
-
-      #      - uses: actions/setup-python@v6
-#        with:
-#          python-version: '3.12'
 
       - uses: aws-actions/setup-sam@v2
         with:
@@ -33,7 +31,6 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
-
       - name: "DEBUG: check identity"
         run: aws sts get-caller-identity
 
@@ -43,9 +40,12 @@ jobs:
       - name: Build
         run: sam build --use-container
 
+      - name: "DEBUG: check $WATCHMODE_API_KEY"
+        run: |
+          echo $WATCHMODE_API_KEY | wc -l
+          echo $WATCHMODE_API_KEY
+
       - name: Deploy
-        env:
-          WATCHMODE_API_KEY: ${{ secrets.WATCHMODE_API_KEY }}
         run: >
           echo $WATCHMODE_API_KEY | wc -l &&
           sam deploy
