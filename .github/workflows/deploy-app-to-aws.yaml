@@ -1,3 +1,4 @@
+name: Deploy TV Event Streaming App
 on:
   push:
     branches:
@@ -43,6 +44,8 @@ jobs:
         run: sam build --use-container
 
       - name: Deploy
+        env:
+          WATCHMODE_API_KEY: ${{ secrets.WATCHMODE_API_KEY }}
         run: >
           sam deploy
             --stack-name "$STACK_NAME"
