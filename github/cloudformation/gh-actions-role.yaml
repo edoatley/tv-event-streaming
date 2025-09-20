@@ -73,6 +73,8 @@ Resources:
                   - cognito-idp:*
                   # For creating and managing EventBridge Scheduler schedules for Lambdas
                   - scheduler:*
+                  # For managing EventBridge triggers
+                  - events:*
                 Resource: "*"
 
 Outputs:

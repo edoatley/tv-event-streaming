@@ -38,6 +38,39 @@ jobs:
       - name: "Debug: Print WATCHMODE_API_KEY"
         run: echo "WATCHMODE_API_KEY=${WATCHMODE_API_KEY:0:4}***"
 
+      - name: Check for failed deploy
+        run: |
+          STACK_STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].StackStatus" --output text --region "$REGION" 2>/dev/null || echo "DOES_NOT_EXIST")
+
+          if [ "$STACK_STATUS" == "ROLLBACK_COMPLETE" ] || [ "$STACK_STATUS" == "DELETE_FAILED" ]; then
+            echo "🗑️ Stack is in a recoverable but failed state ($STACK_STATUS). Cleaning up before deployment..."
+        
+            WEBSITE_BUCKET=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Outputs[?OutputKey=='WebsiteBucket'].OutputValue" --output text --profile "$PROFILE" --region "$REGION" 2>/dev/null)
+        
+            if [ -z "$WEBSITE_BUCKET" ] || [ "$WEBSITE_BUCKET" == "None" ]; then
+              echo "⚠️ Could not find WebsiteBucket in stack outputs. Constructing name manually."
+              WEBSITE_BUCKET="${STACK_NAME}-website-${ACCOUNT_ID}"
+            fi
+        
+            echo "🧹 Emptying S3 bucket: s3://${WEBSITE_BUCKET}..."
+            if aws s3 ls "s3://${WEBSITE_BUCKET}" --profile "${PROFILE}" --region "$REGION" > /dev/null 2>&1; then
+              aws s3 rm "s3://${WEBSITE_BUCKET}" --recursive --profile "${PROFILE}" --region "$REGION"
+              aws s3api delete-bucket --bucket "${WEBSITE_BUCKET}" --profile "${PROFILE}" --region "$REGION"
+              echo "✅ Bucket emptied and deleted to be safe."
+            else
+              echo "✅ Bucket does not exist or is already gone. No action needed."
+            fi
+        
+            echo "🗑️ Deleting stack..."
+            aws cloudformation delete-stack --stack-name "$STACK_NAME" --profile "$PROFILE" --region "$REGION"
+            echo "⏳ Waiting for stack to be deleted..."
+            aws cloudformation wait stack-delete-complete --stack-name "$STACK_NAME" --profile "$PROFILE" --region "$REGION"
+            echo "✅ Stack deleted."
+          elif [ "$STACK_STATUS" != "DOES_NOT_EXIST" ] && [ "$STACK_STATUS" != "CREATE_COMPLETE" ] && [ "$STACK_STATUS" != "UPDATE_COMPLETE" ] && [ "$STACK_STATUS" != "UPDATE_ROLLBACK_COMPLETE" ]; then
+            echo "⚠️ Stack is in an unrecoverable state ($STACK_STATUS). Please check the AWS console. Aborting."
+            exit 1
+          fi
+
       - name: Deploy
         env:
           WATCHMODE_API_KEY: ${{ secrets.WATCHMODE_API_KEY }}
