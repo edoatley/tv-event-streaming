@@ -13,8 +13,6 @@ permissions:
 
 jobs:
   deploy:
-    env:
-      WATCHMODE_API_KEY: ${{ secrets.WATCHMODE_API_KEY }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -39,14 +37,15 @@ jobs:
 
       - name: "Debug: Print WATCHMODE_API_KEY"
         run: echo "WATCHMODE_API_KEY=${WATCHMODE_API_KEY:0:4}***"
-        env:
-          WATCHMODE_API_KEY: ${{ secrets.WATCHMODE_API_KEY }}
 
       - name: Deploy
+        env:
+          WATCHMODE_API_KEY: ${{ secrets.WATCHMODE_API_KEY }}
+          STACK_NAME: tv-event-streaming-gha
+          REGION: eu-west-2
         run: |
           sam deploy \
             --stack-name "$STACK_NAME" \
-            --profile "$PROFILE" \
             --region "$REGION" \
             --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
             --no-fail-on-empty-changeset \
