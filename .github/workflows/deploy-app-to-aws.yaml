@@ -31,9 +31,6 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: "DEBUG: check identity"
-        run: aws sts get-caller-identity
-
       - name: Validate
         run: sam validate --lint
 
@@ -46,14 +43,13 @@ jobs:
           WATCHMODE_API_KEY: ${{ secrets.WATCHMODE_API_KEY }}
 
       - name: Deploy
-        run: >
-          echo $WATCHMODE_API_KEY | wc -l &&
-          sam deploy
-            --stack-name "$STACK_NAME"
-            --profile "$PROFILE"
-            --region "$REGION"
-            --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
-            --no-fail-on-empty-changeset
-            --no-confirm-changeset
+        run: |
+          sam deploy \
+            --stack-name "$STACK_NAME" \
+            --profile "$PROFILE" \
+            --region "$REGION" \
+            --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
+            --no-fail-on-empty-changeset \
+            --no-confirm-changeset \
             --parameter-overrides "CreateDataStream=true" "WatchModeApiKey=${WATCHMODE_API_KEY}"
        
