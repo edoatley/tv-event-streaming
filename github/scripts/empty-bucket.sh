@@ -3,10 +3,12 @@
 
 set -eou
 
+
 WEBSITE_BUCKET=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Outputs[?OutputKey=='WebsiteBucket'].OutputValue" --output text --region "$REGION" 2>/dev/null)
 
 if [ -z "$WEBSITE_BUCKET" ] || [ "$WEBSITE_BUCKET" == "None" ]; then
   echo "⚠️ Could not find WebsiteBucket in stack outputs. Constructing name manually."
+  ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text --region "$REGION")
   WEBSITE_BUCKET="${STACK_NAME}-website-${ACCOUNT_ID}"
 fi
 
