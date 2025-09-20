@@ -1,0 +1,48 @@
+on:
+  push:
+    branches:
+      - main
+      - github-actions
+      - feature/*
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      #      - uses: actions/setup-python@v6
+#        with:
+#          python-version: '3.12'
+
+      - uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: "DEBUG: check identity"
+        run: aws sts get-caller-identity
+
+      - name: Validate
+        run: sam validate --lint
+
+      - name: Build
+        run: sam build --use-container
+
+      - name: Deploy
+        run: >
+          sam deploy
+            --stack-name "$STACK_NAME"
+            --profile "$PROFILE"
+            --region "$REGION"
+            --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
+            --no-fail-on-empty-changeset
+            --no-confirm-changeset
+            --parameter-overrides "CreateDataStream=true" "WatchModeApiKey=${WATCHMODE_API_KEY}"
+       

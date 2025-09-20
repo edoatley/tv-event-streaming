@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  This template creates an IAM OIDC provider for GitHub Actions and an IAM role
+  that GitHub Actions can assume to deploy the tv-event-streaming application.
+
+Resources:
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        # This is the thumbprint for the DigiCert High Assurance EV Root CA certificate used by GitHub's OIDC provider.
+        # It's recommended to verify this thumbprint from the official AWS or GitHub documentation.
+        - 1c58a3a8518e8759bf075b76b750d4f2df264fcd
+
+  GitHubActionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: edoatley-tv-event-streaming-gh-actions
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GitHubOidcProvider
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com'
+                'token.actions.githubusercontent.com:sub': 'repo:edoatley/tv-event-streaming'
+      Policies:
+        - PolicyName: GitHubActionsDeployPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  # For deploying CloudFormation stacks, including nested stacks via SAM
+                  - cloudformation:*
+                  # For SAM to upload templates and Lambda code packages to the deployment bucket
+                  - s3:*
+                  # For creating roles for Lambdas and other services, and passing them.
+                  # This is a broad permission set required by CloudFormation to manage IAM resources.
+                  - iam:*
+                  # For creating and managing Lambda functions and event source mappings
+                  - lambda:*
+                  # For creating and managing API Gateways
+                  - apigateway:*
+                  # For creating and managing DynamoDB tables and streams
+                  - dynamodb:*
+                  # For creating and managing CloudWatch Log Groups for Lambdas and APIs
+                  - logs:*
+                  # For creating and managing Secrets Manager secrets
+                  - secretsmanager:*
+                  # For creating and managing Kinesis streams
+                  - kinesis:*
+                  # For creating and managing CloudFront distributions and OAIs
+                  - cloudfront:*
+                  # For creating and managing Cognito User Pools and related resources
+                  - cognito-idp:*
+                  # For creating and managing EventBridge Scheduler schedules for Lambdas
+                  - scheduler:*
+                Resource: "*"
+
+Outputs:
+  GitHubActionsRoleArn:
+    Description: "The ARN of the IAM role for GitHub Actions"
+    Value: !GetAtt GitHubActionsRole.Arn

@@ -62,7 +62,7 @@ Resources:
       FunctionName: PeriodicUKTitlesForUserPrefsFunction
       Handler: ingestion.lambda_handler
       Runtime: python3.12
-      CodeUri: ../../src/userprefs_title_ingestion/
+      CodeUri: ../src/userprefs_title_ingestion/
       Description: Periodically fetches TV data from an external API and sends it to Kinesis.
       MemorySize: 256
       Timeout: 300

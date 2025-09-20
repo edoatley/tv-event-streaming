@@ -135,4 +135,4 @@ The admin Lambda function will query DynamoDB to gather table metadata.
 
 *   **Testing user:** Create a new user `TestAdminUser` in Cloudformation like the current TestUser (test.user@example.com), use the email `admin.user@example.com`
 *   **Unit Tests:** - create simple unit tests using pytest to validate the admin API lambda function.
-*   **Integration Tests:** use a script like [remote_web_api_tests.sh](../../scripts/remote_web_api_tests.sh) to test the deployed API via API Gateway
+*   **Integration Tests:** use a script like [remote_web_api_tests.sh](../../scripts/remote_tests/remote_web_api_tests.sh) to test the deployed API via API Gateway

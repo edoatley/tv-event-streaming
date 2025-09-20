@@ -44,6 +44,9 @@
     * [Admin UI Integration Plan](#admin-ui-integration-plan)
     * [Testing plan](#testing-plan)
   * [Step 17 - Web UI tests and pipeline for deployment](#step-17---web-ui-tests-and-pipeline-for-deployment)
+    * [In progress](#in-progress)
+      * [Review Scripts](#review-scripts)
+      * [Setup a Cloudformation pipeline in a secure way to deploy the application](#setup-a-cloudformation-pipeline-in-a-secure-way-to-deploy-the-application)
   * [Step 18 - schedule the API calls to get the shows and make it efficient](#step-18---schedule-the-api-calls-to-get-the-shows-and-make-it-efficient)
   * [Cleanup](#cleanup)
 <!-- TOC -->
@@ -151,7 +154,7 @@ aws cloudformation deploy \
 
 ## Step 3 - Periodic Ingestion Lambda (basic deployment)
 
-1. set up this [Periodic Ingestion CloudFormation template](resources/cloudformation/userprefs-title-ingestion.yaml) to deploy the resources
+1. set up this [Periodic Ingestion CloudFormation template](cloudformation/userprefs-title-ingestion.yaml) to deploy the resources
    associated with our first function called **PeriodicUKTVDataIngestionFunction**
 
 2. Built the app using sam:
@@ -208,7 +211,7 @@ This service offers a vast number of APIs but some of the ones of interest for u
 Watchmode has various static data such as sources of TV programmes (`/v1/sources/`). 
 
 It seems like a good idea to create another lambda to save this data to dynamoDB to avoid extra calls. We will create this
-lambda [here](/src/periodic_reference_data) and create a CFN template [here](resources/cloudformation/periodic-reference.yaml)
+lambda [here](/src/periodic_reference_data) and create a CFN template [here](cloudformation/periodic-reference.yaml)
 
 We can pass a region of **GB** to `/v1/sources/` to get sources applicable in the UK. 
 
@@ -232,21 +235,43 @@ sam deploy
 
 To do this I made tome key changes:
 
-1. Created a [samconfig.toml](resources/cloudformation/samconfig.toml.template) that pointed to my new parent CloudFormation template for 
-   validate/build/deploy commands
-2. Took the Secret, Table, Stream, S3 bucket resources and added them to the parent CFN template [uktv-event-streaming-app.yaml](./resources/uktv-event-streaming-app.yaml]
-3. Created `AWS::Serverless::Application` resource in teh parent that point to [periodic-ingestion.yaml](resources/cloudformation/userprefs-title-ingestion.yaml) 
+1. Created a `samconfig.toml` that pointed to my new parent CloudFormation template for the validate/build/deploy commands
+2. Took the Secret, Table, Stream, S3 bucket resources and added them to the parent CFN template [uktv-event-streaming-app.yaml](cloudformation/uktv-event-streaming-app.yaml)
+3. Created `AWS::Serverless::Application` resource in teh parent that point to [periodic-ingestion.yaml](cloudformation/userprefs-title-ingestion.yaml) 
 and [periodic-reference.yaml](./resources/periodic-reference.yaml].
 
 With some tweaks the whole application is build on one SAM app but it is broken down into appropriate files to manage
 which means when we add the next lambda it will be trivial.
+
+The `samconfig.toml` looks something like this:
+
+```toml
+[default.build.parameters]
+template_file = "resources/uktv-event-streaming-app.yaml"
+cached = true
+parallel = true
+[default.validate.parameters]
+template_file = "resources/uktv-event-streaming-app.yaml"
+[default.local_invoke.parameters]
+profile = "<PROFILE NAME>"
+region = "eu-west-2"
+[default.remote_invoke.parameters]
+profile = "<PROFILE NAME>"
+region = "eu-west-2"
+[default.deploy.parameters]
+stack_name = "uktv-event-streaming-app"
+resolve_s3 = true
+s3_prefix = "uktv-event-streaming-app"
+region = "eu-west-2"
+profile = "<PROFILE NAME>"
+```
 
 ## Step 6 - Preferences API
 
 This is very similar to the previous two lambdas in many ways except this time we need to have API Gateway fronting the 
 lambda and ideally a pool of user personas we can use to test it out. 
 
-The API is going to be defined in the following [OpenAPI specification](resources/cloudformation/user-preferences-api.yaml). 
+The API is going to be defined in the following [OpenAPI specification](cloudformation/user-preferences-api.yaml). 
 As you can see the endpoints provided are:
 
 - `GET /preferences` - get the users preferences
@@ -254,7 +279,7 @@ As you can see the endpoints provided are:
 - `GET /sources` - list the available sources
 - `GET /genres` - list the available genres
 
-In the [main CFN template](resources/cloudformation/uktv-event-streaming-app.yaml) we have added:
+In the [main CFN template](cloudformation/uktv-event-streaming-app.yaml) we have added:
 
 - `AWS::Cognito::UserPool`
 - `AWS::Cognito::UserPoolClient`
@@ -291,7 +316,7 @@ for the newly named `PeriodicUKTitlesForUserPrefsFunction` will be:
 To avoid deploying all the services to AWS for testing, we will use LocalStack.
 
 - A docker compose file defines the localstack services: [docker-compose.yaml](docker-compose.yaml)
-- A script initializes the local resources: [local-test-setup.sh](resources/scripts/local_tests/local_setup.sh).
+- A script initializes the local resources: [local-test-setup.sh](scripts/local_tests/local_setup.sh).
 - WatchMode API keys are stored in the LocalStack Secrets Manager.
 - A script runs all local tests: [resources/local-test-execute-all.sh](./resources/local-test-execute-all.sh]
 
@@ -303,7 +328,7 @@ The local development workflow is as follows:
 
 ### Specialist Test Script for Title Ingestion
 
-A specialist script [test_e2e.sh](resources/scripts/local_tests/test_e2e.sh) performs a full integration test of the `UserPrefsTitleIngestionFunction`.
+A specialist script [test_e2e.sh](scripts/local_tests/test_e2e.sh) performs a full integration test of the `UserPrefsTitleIngestionFunction`.
 
 ## Step 11 - store title data to DynamoDB
 
@@ -323,7 +348,7 @@ A new `TitleEnrichmentFunction` is triggered by a DynamoDB Stream on the `Progra
 
 ## Step 13 - deploy to AWS and run an E2E test (taking cost safeguards)
 
-We now have the majority of the event pipeline working. We now can deploy it to AWS for real and run a basic test. The steps are automated in [remote_deploy_and_smoke_test.sh](resources/scripts/remote_deploy_and_smoke_test.sh).
+We now have the majority of the event pipeline working. We now can deploy it to AWS for real and run a basic test. The steps are automated in [remote_deploy_and_smoke_test.sh](scripts/remote_tests/remote_deploy_and_smoke_test.sh).
 
 ## Step 14 - add the EventBridge triggers
 
@@ -454,24 +479,27 @@ Now most stuff is working we will stabilise by:
 
 #### Review Scripts
 
-| Script                                                                               | Purpose | Working? | Fate |
-|--------------------------------------------------------------------------------------|---------|----------|------|
-| [local_setup.sh](resources/scripts/local_tests/local_setup.sh)                       |         |          |      |
-| [run_tests.sh](resources/scripts/local_tests/run_tests.sh)                           |         |          |      |
-| [test_e2e.sh](resources/scripts/local_tests/test_e2e.sh)                             |         |          |      |
-| [test_enrichment.sh](resources/scripts/local_tests/test_enrichment.sh)               |         |          |      |
-| [test_helpers.sh](resources/scripts/local_tests/test_helpers.sh)                     |         |          |      |
-| [account-level-cwlogs.sh](resources/scripts/account-level-cwlogs.sh)                 |         |          |      |
-| [debug_preferences_endpoint.sh](resources/scripts/debug_preferences_endpoint.sh)     |         |          |      |
-| [dynamodb_inspector.sh](resources/scripts/dynamodb_inspector.sh)                     |         |          |      |
-| [get_lambda_logs.sh](resources/scripts/get_lambda_logs.sh)                           |         |          |      |
-| [remote_deploy.sh](resources/scripts/remote_deploy.sh)                               |         |          |      |
-| [remote_deploy_and_smoke_test.sh](resources/scripts/remote_deploy_and_smoke_test.sh) |         |          |      |
-| [remote_web_api_tests.sh](resources/scripts/remote_web_api_tests.sh)                 |         |          |      |
-| [run_admin_api_tests.sh](resources/scripts/run_admin_api_tests.sh)                   |         |          |      |
-| [set-cognito-password.sh](resources/scripts/set-cognito-password.sh)                 |         |          |      |
-| [teardown.sh](resources/scripts/teardown.sh)                                         |         |          |      |
-| [update_website_config.sh](resources/scripts/update_website_config.sh)               |         |          |      |
+| Script                                                                                  | Purpose | Working? | Fate |
+|-----------------------------------------------------------------------------------------|---------|----------|------|
+| [local_setup.sh](scripts/local_tests/local_setup.sh)                                    |         |          |      |
+| [run_tests.sh](scripts/local_tests/run_tests.sh)                                        |         |          |      |
+| [test_e2e.sh](scripts/local_tests/test_e2e.sh)                                          |         |          |      |
+| [test_enrichment.sh](scripts/local_tests/test_enrichment.sh)                            |         |          |      |
+| [test_helpers.sh](scripts/local_tests/test_helpers.sh)                                  |         |          |      |
+| [account-level-cwlogs.sh](scripts/utils/account-level-cwlogs.sh)                        |         |          |      |
+| [debug_preferences_endpoint.sh](scripts/remote_tests/debug_preferences_endpoint.sh)     |         |          |      |
+| [dynamodb_inspector.sh](scripts/utils/dynamodb_inspector.sh)                            |         |          |      |
+| [get_lambda_logs.sh](scripts/utils/get_lambda_logs.sh)                                  |         |          |      |
+| [remote_deploy.sh](scripts/deploy/remote_deploy.sh)                                     |         |          |      |
+| [remote_deploy_and_smoke_test.sh](scripts/remote_tests/remote_deploy_and_smoke_test.sh) |         |          |      |
+| [remote_web_api_tests.sh](scripts/remote_tests/remote_web_api_tests.sh)                 |         |          |      |
+| [run_admin_api_tests.sh](scripts/remote_tests/run_admin_api_tests.sh)                   |         |          |      |
+| [set-cognito-password.sh](scripts/deploy/set-cognito-password.sh)                       |         |          |      |
+| [teardown.sh](scripts/deploy/teardown.sh)                                               |         |          |      |
+| [update_website_config.sh](scripts/deploy/update_website_config.sh)                     |         |          |      |
+
+#### Setup a Cloudformation pipeline in a secure way to deploy the application
+
 
 ## Step 18 - schedule the API calls to get the shows and make it efficient
 

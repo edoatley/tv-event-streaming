@@ -1,0 +1,27 @@
+version = 0.1
+
+# sam build command
+[default.build.parameters]
+template_file = "cloudformation/uktv-event-streaming-app.yaml"
+cached = true
+parallel = true
+
+# sam validate command
+[default.validate.parameters]
+template_file = "cloudformation/uktv-event-streaming-app.yaml"
+
+# sam local-invoke command
+[default.local_invoke.parameters]
+profile = "streaming"
+region = "eu-west-2"
+
+# sam remote invoke command
+[default.remote_invoke.parameters]
+region = "eu-west-2"
+
+# sam deploy command
+[default.deploy.parameters]
+stack_name = "uktv-event-streaming-app"
+resolve_s3 = true
+s3_prefix = "uktv-event-streaming-app"
+region = "eu-west-2"
