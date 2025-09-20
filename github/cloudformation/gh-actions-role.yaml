@@ -39,7 +39,8 @@ Resources:
             Condition:
               StringEquals:
                 'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com'
-                'token.actions.githubusercontent.com:sub': !Sub "repo:${RepositoryOwner}/${RepositoryName}"
+              StringLike:
+                'token.actions.githubusercontent.com:sub': !Sub "repo:${RepositoryOwner}/${RepositoryName}:*"
       Policies:
         - PolicyName: GitHubActionsDeployPolicy
           PolicyDocument:
