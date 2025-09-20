@@ -40,10 +40,10 @@ jobs:
       - name: Build
         run: sam build --use-container
 
-      - name: "DEBUG: check $WATCHMODE_API_KEY"
-        run: |
-          echo $WATCHMODE_API_KEY | wc -l
-          echo $WATCHMODE_API_KEY
+      - name: "Debug: Print WATCHMODE_API_KEY"
+        run: echo "WATCHMODE_API_KEY=${WATCHMODE_API_KEY:0:4}***"
+        env:
+          WATCHMODE_API_KEY: ${{ secrets.WATCHMODE_API_KEY }}
 
       - name: Deploy
         run: >
