@@ -1,0 +1,60 @@
+name: Deploy TV Event Streaming App
+on:
+  workflow_dispatch:
+
+  delete:
+    branches:
+      - github-actions
+      - feature/*
+
+# Require token generation access to authenticate with AWS OIDC
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  STACK_NAME: tv-event-streaming-gha
+  REGION: eu-west-2
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Empty Bucket
+        run: |
+          WEBSITE_BUCKET=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Outputs[?OutputKey=='WebsiteBucket'].OutputValue" --output text --profile "$PROFILE" --region "$REGION" 2>/dev/null)
+
+          if [ -z "$WEBSITE_BUCKET" ] || [ "$WEBSITE_BUCKET" == "None" ]; then
+            echo "⚠️ Could not find WebsiteBucket in stack outputs. Constructing name manually."
+            WEBSITE_BUCKET="${STACK_NAME}-website-${ACCOUNT_ID}"
+          fi
+        
+          echo "🧹 Emptying S3 bucket: s3://${WEBSITE_BUCKET}..."
+          if aws s3 ls "s3://${WEBSITE_BUCKET}" --region "$REGION" > /dev/null 2>&1; then
+            aws s3 rm "s3://${WEBSITE_BUCKET}" --recursive --region "$REGION"
+            aws s3api delete-bucket --bucket "${WEBSITE_BUCKET}" --region "$REGION"
+            echo "✅ Bucket emptied and deleted to be safe."
+          else
+            echo "✅ Bucket does not exist or is already gone. No action needed."
+          fi
+
+      - name: Delete Stack
+        run: aws cloudformation delete-stack --stack-name "$STACK_NAME" --region "$REGION"
+
+      - name: Await Stack Deletion
+        run: aws cloudformation wait stack-delete-complete --stack-name "$STACK_NAME" --region "$REGION"
+       
