@@ -500,6 +500,7 @@ Now most stuff is working we will stabilise by:
 
 #### Setup a Cloudformation pipeline in a secure way to deploy the application
 
+1. needed to set up OIDC authentication between GH actions and AWS:  
 
 ## Step 18 - schedule the API calls to get the shows and make it efficient
 
