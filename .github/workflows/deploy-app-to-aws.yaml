@@ -47,6 +47,7 @@ jobs:
         env:
           WATCHMODE_API_KEY: ${{ secrets.WATCHMODE_API_KEY }}
         run: >
+          echo $WATCHMODE_API_KEY | wc -l &&
           sam deploy
             --stack-name "$STACK_NAME"
             --profile "$PROFILE"
