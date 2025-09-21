@@ -53,7 +53,7 @@ Resources:
       FunctionName: PeriodicUKTVReferenceFunction
       Handler: reference.lambda_handler
       Runtime: python3.12
-      CodeUri: ../../src/periodic_reference_data/
+      CodeUri: ../src/periodic_reference_data/
       Description: Periodically fetches TV reference data from WatchMode API and saves it to DynamoDB.
       MemorySize: 256
       Timeout: 60 # Adjusted timeout, 300 might be excessive for this

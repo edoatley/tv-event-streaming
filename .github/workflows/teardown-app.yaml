@@ -1,0 +1,43 @@
+name: Delete TV Event Streaming App
+on:
+  workflow_dispatch:
+
+  delete:
+    branches:
+      - feature/*
+
+# Require token generation access to authenticate with AWS OIDC
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  STACK_NAME: tv-event-streaming-gha
+  REGION: eu-west-2
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Empty Bucket
+        run: bash ./github/scripts/empty-bucket.sh
+
+      - name: Delete Stack
+        run: aws cloudformation delete-stack --stack-name "$STACK_NAME" --region "$REGION"
+
+      - name: Await Stack Deletion
+        run: aws cloudformation wait stack-delete-complete --stack-name "$STACK_NAME" --region "$REGION"

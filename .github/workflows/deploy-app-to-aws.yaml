@@ -1,0 +1,72 @@
+name: Deploy TV Event Streaming App
+on:
+  push:
+    branches:
+      - feature/*
+
+# Require token generation access to authenticate with AWS OIDC
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  STACK_NAME: tv-event-streaming-gha
+  REGION: eu-west-2
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Validate
+        run: sam validate --lint
+
+      - name: Build
+        run: sam build --use-container
+
+      - name: Check for failed deploy
+        run: bash ./github/scripts/recover-failed-stack.sh
+
+      - name: Deploy
+        env:
+          WATCHMODE_API_KEY: ${{ secrets.WATCHMODE_API_KEY }}
+        run: |
+          sam deploy \
+            --stack-name "$STACK_NAME" \
+            --region "$REGION" \
+            --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
+            --no-fail-on-empty-changeset \
+            --no-confirm-changeset \
+            --parameter-overrides "CreateDataStream=true" "WatchModeApiKey=${WATCHMODE_API_KEY}"
+
+      - name: Set passwords for Cognito users
+        env:
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+          ADMIN_USER_PASSWORD: ${{ secrets.ADMIN_USER_PASSWORD }}
+        run: |
+          bash ./github/scripts/set-cognito-passwords.sh \
+            ${TEST_USER_PASSWORD} \
+            ${ADMIN_USER_PASSWORD} \
+            ${STACK_NAME} \
+            ${REGION}
+
+      - name: Update Website Contents
+        run: bash ./github/scripts/update-website-contents.sh ${STACK_NAME} ${REGION}
+
+      - name: Clear Cloudfront cache
+        run: bash ./github/scripts/clear-cloudfront-cache.sh ${STACK_NAME} ${REGION}
+
+

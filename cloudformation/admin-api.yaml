@@ -132,7 +132,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "${RootStackName}-AdminLambda"
-      CodeUri: ../../src/admin_lambda/
+      CodeUri: ../src/admin_lambda/
       Handler: admin_lambda.lambda_handler
       Runtime: python3.11
       MemorySize: 128

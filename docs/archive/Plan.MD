@@ -40,7 +40,7 @@ This document outlines the plan to enhance the UK TV Guide application, focusing
 - [ ] **Design:** Plan the layout and functionality of the admin screen in Architect mode.
   - [ ] Function to allow triggering of Reference data refresh
   - [ ] Function to allow triggering of Title data refresh
-  - [ ] Screen with the ability to summarise Dynamo data like [dynamodb_inspector.sh](../../scripts/dynamodb_inspector.sh)
+  - [ ] Screen with the ability to summarise Dynamo data like [dynamodb_inspector.sh](../../scripts/utils/dynamodb_inspector.sh)
   - [ ] Function to trigger Enrichment for all unenriched titles
   - [ ] Other abilities we require...
 - [ ] New user to login as Security Admin and only user with access to admin screen

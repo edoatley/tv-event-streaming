@@ -57,7 +57,7 @@ Resources:
       FunctionName: TitleEnrichmentFunction
       Handler: enrichment.lambda_handler
       Runtime: python3.12
-      CodeUri: ../../src/title_enrichment/
+      CodeUri: ../src/title_enrichment/
       Description: Consumes DynamoDB stream events to enrich title records.
       MemorySize: 256
       Timeout: 60

@@ -52,7 +52,7 @@ Resources:
       FunctionName: TitleRecommendationsConsumerFunction
       Handler: consumer.lambda_handler
       Runtime: python3.12
-      CodeUri: ../../src/title_recommendations_consumer/
+      CodeUri: ../src/title_recommendations_consumer/
       Description: Consumes title recommendation events from Kinesis and logs them.
       MemorySize: 128
       Timeout: 60

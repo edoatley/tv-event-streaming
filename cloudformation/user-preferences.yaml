@@ -145,7 +145,7 @@ Resources:
     Properties:
       Handler: preferences.lambda_handler
       Runtime: python3.12
-      CodeUri: ../../src/user_preferences/
+      CodeUri: ../src/user_preferences/
       MemorySize: 256
       Timeout: 30
       Policies:

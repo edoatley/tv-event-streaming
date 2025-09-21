@@ -72,7 +72,7 @@ Resources:
     Properties:
       Handler: web_api.lambda_handler
       Runtime: python3.12
-      CodeUri: ../../src/web_api/
+      CodeUri: ../src/web_api/
       MemorySize: 256
       Timeout: 30
       Policies:
