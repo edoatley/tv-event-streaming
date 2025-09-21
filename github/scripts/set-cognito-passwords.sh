@@ -32,7 +32,6 @@ echo "Fetching details from CloudFormation stack: $STACK_NAME..."
 STACK_OUTPUTS=$(aws cloudformation describe-stacks \
   --stack-name "$STACK_NAME" \
   --query "Stacks[0].Outputs" \
-  --profile "$PROFILE" \
   --region "$REGION")
 
 # --- Fetch Required Values ---
