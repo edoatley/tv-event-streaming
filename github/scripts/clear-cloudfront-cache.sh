@@ -3,8 +3,8 @@
 
 set -eou
 
-STACK_NAME="uktv-event-streaming-app"
-REGION="eu-west-2"
+STACK_NAME="${1:-uktv-event-streaming-app}"
+REGION="${2:-eu-west-2}"
 
 DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
   --stack-name "$STACK_NAME" \

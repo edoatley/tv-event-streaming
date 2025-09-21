@@ -66,9 +66,9 @@ jobs:
             ${REGION}
 
       - name: Update Website Contents
-        run: bash ./github/scripts/update-website-contents.sh
+        run: bash ./github/scripts/update-website-contents.sh ${STACK_NAME} ${REGION}
 
       - name: Clear Cloudfront cache
-        run: bash ./github/scripts/
+        run: bash ./github/scripts/clear-cloudfront-cache.sh ${STACK_NAME} ${REGION}
 
 
