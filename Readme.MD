@@ -508,6 +508,12 @@ The current title ingestion process is inefficient. A more efficient approach wo
 1.  Gather all unique **source and genre combinations** that users have explicitly selected.
 2.  Make a single, paginated API call to WatchMode that can filter on these specific combinations.
 
+## Step 19 - consider improvements to admin and main screens
+
+1. Screen that shows the data in the table
+2. Screen that shows when the different Lambdas were called
+
+
 ## Cleanup
  
 Delete the shared resources:

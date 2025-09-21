@@ -2,8 +2,6 @@ name: Deploy TV Event Streaming App
 on:
   push:
     branches:
-      - main
-      - github-actions
       - feature/*
 
 # Require token generation access to authenticate with AWS OIDC
