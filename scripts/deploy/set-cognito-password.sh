@@ -47,16 +47,23 @@ USERS_TO_UPDATE=()
 [ -n "$TEST_USERNAME" ] && USERS_TO_UPDATE+=("$TEST_USERNAME")
 [ -n "$ADMIN_USERNAME" ] && USERS_TO_UPDATE+=("$ADMIN_USERNAME")
 
-for USERNAME in "${USERS_TO_UPDATE[@]}"; do
-  echo -e "\nSetting initial password for user: $USERNAME..."
+# Function to set a user's password
+set_user_password() {
+  local username_to_set="$1"
+  local password_to_set="$2"
+  echo -e "\nSetting initial password for user: $username_to_set..."
   aws cognito-idp admin-set-user-password \
     --user-pool-id "$USER_POOL_ID" \
-    --username "$USERNAME" \
-    --password "$NEW_PASSWORD" \
+    --username "$username_to_set" \
+    --password "$password_to_set" \
     --permanent \
     --profile "$PROFILE" \
     --region "$REGION"
-  echo "✅ Password for '$USERNAME' has been set."
+  echo "✅ Password for '$username_to_set' has been set."
+}
+
+for USERNAME in "${USERS_TO_UPDATE[@]}"; do
+  set_user_password "$USERNAME" "$NEW_PASSWORD"
 done
 
 echo -e "\nAll specified users have been updated. You can now log in."

@@ -53,4 +53,22 @@ jobs:
             --no-fail-on-empty-changeset \
             --no-confirm-changeset \
             --parameter-overrides "CreateDataStream=true" "WatchModeApiKey=${WATCHMODE_API_KEY}"
-       
+
+      - name: Set passwords for Cognito users
+        env:
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+          ADMIN_USER_PASSWORD: ${{ secrets.ADMIN_USER_PASSWORD }}
+        run: |
+          bash ./github/scripts/set-cognito-passwords.sh \
+            ${TEST_USER_PASSWORD} \
+            ${ADMIN_USER_PASSWORD} \
+            ${STACK_NAME} \
+            ${REGION}
+
+      - name: Update Website Contents
+        run: bash ./github/scripts/update-website-contents.sh
+
+      - name: Clear Cloudfront cache
+        run: bash ./github/scripts/
+
+
