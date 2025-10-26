@@ -19,6 +19,24 @@ export AWS_ACCESS_KEY_ID="test"
 export AWS_SECRET_ACCESS_KEY="test"
 export AWS_DEFAULT_REGION=${REGION}
 
+# Source helper functions for container detection
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "${SCRIPT_DIR}/test_helpers.sh"
+
+echo ""
+echo "--- Ensuring local infrastructure is running ---"
+detect_container_tool
+
+# Check if the container is already running
+if $CONTAINER_TOOL ps --format "{{.Names}}" 2>/dev/null | grep -q "^localstack$"; then
+  echo "LocalStack container is already running."
+else
+  echo "LocalStack container not running. Starting with '$CONTAINER_TOOL compose up -d'..."
+  $CONTAINER_TOOL compose up -d
+  echo "Waiting for LocalStack to be ready..."
+  sleep 3
+fi
+
 # AWS CLI command alias
 AWS="aws --endpoint-url=${ENDPOINT_URL} --region ${REGION}"
 

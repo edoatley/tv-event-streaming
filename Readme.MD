@@ -3,52 +3,52 @@
 ## Table of contents
 
 <!-- TOC -->
-* [Event Streaming app](#event-streaming-app)
-  * [Table of contents](#table-of-contents)
-  * [Current Status & Future Plan](#current-status--future-plan)
-    * [Completed Milestones:](#completed-milestones)
-    * [Next Steps & Enhancements:](#next-steps--enhancements)
-  * [Target Architecture diagram](#target-architecture-diagram)
-  * [Step 1 - Initial set up](#step-1---initial-set-up)
-  * [Step 2 - Shared infrastructure set up](#step-2---shared-infrastructure-set-up)
-  * [Step 3 - Periodic Ingestion Lambda (basic deployment)](#step-3---periodic-ingestion-lambda-basic-deployment)
-  * [Step 4 - WatchMode initial integration](#step-4---watchmode-initial-integration)
-    * [Sources](#sources)
-    * [Genres](#genres)
-  * [Step 5 - SAM Project cleanup](#step-5---sam-project-cleanup)
-  * [Step 6 - Preferences API](#step-6---preferences-api)
-  * [Step 7 - Call API to get some shows for all known genres and source](#step-7---call-api-to-get-some-shows-for-all-known-genres-and-source)
-  * [Step 9 - read title data published to kinesis](#step-9---read-title-data-published-to-kinesis)
-  * [Step 10 - publish title data to kinesis](#step-10---publish-title-data-to-kinesis)
-    * [LocalStack setup](#localstack-setup)
-    * [Specialist Test Script for Title Ingestion](#specialist-test-script-for-title-ingestion)
-  * [Step 11 - store title data to DynamoDB](#step-11---store-title-data-to-dynamodb)
-  * [Step 12 - enrich the stored title data in DynamoDB](#step-12---enrich-the-stored-title-data-in-dynamodb)
-  * [Step 13 - deploy to AWS and run an E2E test (taking cost safeguards)](#step-13---deploy-to-aws-and-run-an-e2e-test-taking-cost-safeguards)
-  * [Step 14 - add the EventBridge triggers](#step-14---add-the-eventbridge-triggers)
-  * [Step 15 - single page web application hosted on S3](#step-15---single-page-web-application-hosted-on-s3)
-    * [What's Been Added](#whats-been-added)
-    * [Deployment Steps](#deployment-steps)
-    * [Website Features](#website-features)
-  * [Step 16 - Administrator screen](#step-16---administrator-screen)
-    * [Admin Screen UI Design](#admin-screen-ui-design)
-      * [Header](#header)
-      * [Main Content Area](#main-content-area)
-        * [Data Management Section](#data-management-section)
-        * [System Status Section](#system-status-section)
-    * [Admin API Design](#admin-api-design)
-      * [Endpoints](#endpoints)
-    * [DynamoDB Data Summary Implementation Plan](#dynamodb-data-summary-implementation-plan)
-    * [Security Admin Implementation Plan](#security-admin-implementation-plan)
-    * [New Admin Lambda Function Scope and Responsibilities](#new-admin-lambda-function-scope-and-responsibilities)
-    * [Admin UI Integration Plan](#admin-ui-integration-plan)
-    * [Testing plan](#testing-plan)
-  * [Step 17 - Web UI tests and pipeline for deployment](#step-17---web-ui-tests-and-pipeline-for-deployment)
-    * [In progress](#in-progress)
-      * [Review Scripts](#review-scripts)
-      * [Setup a Cloudformation pipeline in a secure way to deploy the application](#setup-a-cloudformation-pipeline-in-a-secure-way-to-deploy-the-application)
-  * [Step 18 - schedule the API calls to get the shows and make it efficient](#step-18---schedule-the-api-calls-to-get-the-shows-and-make-it-efficient)
-  * [Cleanup](#cleanup)
+- [Event Streaming app](#event-streaming-app)
+  - [Table of contents](#table-of-contents)
+  - [Current Status \& Future Plan](#current-status--future-plan)
+    - [Completed Milestones:](#completed-milestones)
+    - [Next Steps \& Enhancements:](#next-steps--enhancements)
+  - [Target Architecture diagram](#target-architecture-diagram)
+  - [Step 1 - Initial set up](#step-1---initial-set-up)
+  - [Step 2 - Shared infrastructure set up](#step-2---shared-infrastructure-set-up)
+  - [Step 3 - Periodic Ingestion Lambda (basic deployment)](#step-3---periodic-ingestion-lambda-basic-deployment)
+  - [Step 4 - WatchMode initial integration](#step-4---watchmode-initial-integration)
+    - [Sources](#sources)
+    - [Genres](#genres)
+  - [Step 5 - SAM Project cleanup](#step-5---sam-project-cleanup)
+  - [Step 6 - Preferences API](#step-6---preferences-api)
+  - [Step 7 - Call API to get some shows for all known genres and source](#step-7---call-api-to-get-some-shows-for-all-known-genres-and-source)
+  - [Step 9 - read title data published to kinesis](#step-9---read-title-data-published-to-kinesis)
+  - [Step 10 - publish title data to kinesis](#step-10---publish-title-data-to-kinesis)
+    - [LocalStack setup](#localstack-setup)
+    - [Specialist Test Script for Title Ingestion](#specialist-test-script-for-title-ingestion)
+  - [Step 11 - store title data to DynamoDB](#step-11---store-title-data-to-dynamodb)
+  - [Step 12 - enrich the stored title data in DynamoDB](#step-12---enrich-the-stored-title-data-in-dynamodb)
+  - [Step 13 - deploy to AWS and run an E2E test (taking cost safeguards)](#step-13---deploy-to-aws-and-run-an-e2e-test-taking-cost-safeguards)
+  - [Step 14 - add the EventBridge triggers](#step-14---add-the-eventbridge-triggers)
+  - [Step 15 - single page web application hosted on S3](#step-15---single-page-web-application-hosted-on-s3)
+    - [What's Been Added](#whats-been-added)
+    - [Deployment Steps](#deployment-steps)
+    - [Website Features](#website-features)
+  - [Step 16 - Administrator screen](#step-16---administrator-screen)
+    - [Admin Screen UI Design](#admin-screen-ui-design)
+      - [Header](#header)
+      - [Main Content Area](#main-content-area)
+        - [Data Management Section](#data-management-section)
+        - [System Status Section](#system-status-section)
+    - [Admin API Design](#admin-api-design)
+      - [Endpoints](#endpoints)
+    - [DynamoDB Data Summary Implementation Plan](#dynamodb-data-summary-implementation-plan)
+    - [Security Admin Implementation Plan](#security-admin-implementation-plan)
+    - [New Admin Lambda Function Scope and Responsibilities](#new-admin-lambda-function-scope-and-responsibilities)
+    - [Admin UI Integration Plan](#admin-ui-integration-plan)
+    - [Testing plan](#testing-plan)
+  - [Step 17 - Web UI tests and pipeline for deployment - **In progress**](#step-17---web-ui-tests-and-pipeline-for-deployment---in-progress)
+      - [Review Scripts](#review-scripts)
+      - [Setup a Cloudformation pipeline in a secure way to deploy the application](#setup-a-cloudformation-pipeline-in-a-secure-way-to-deploy-the-application)
+  - [Step 18 - schedule the API calls to get the shows and make it efficient](#step-18---schedule-the-api-calls-to-get-the-shows-and-make-it-efficient)
+  - [Step 19 - consider improvements to admin and main screens](#step-19---consider-improvements-to-admin-and-main-screens)
+  - [Cleanup](#cleanup)
 <!-- TOC -->
 
 ## Current Status & Future Plan
@@ -466,37 +466,35 @@ The admin Lambda function will query DynamoDB to gather table metadata.
 *   **Unit Tests:** Create unit tests using pytest to validate the admin API lambda function.
 *   **Integration Tests:** Use a script to test the deployed API via API Gateway.
 
-## Step 17 - Web UI tests and pipeline for deployment
+## Step 17 - Web UI tests and pipeline for deployment - **In progress**
 
 Now most stuff is working we will stabilise by:
 
-1. Reviewing test scripts to validate they all work and rationalising
-2. Adding A UI test suite
-3. Reviewing security and ensuring it is robust
-4. Define a deployment pipeline
-
-### In progress
+- [x] 1. Reviewing test scripts to validate they all work and rationalising
+- [ ] 2. Adding A UI test suite
+- [ ] 3. Reviewing security and ensuring it is robust
+- [ ] 4. Define a deployment pipeline
 
 #### Review Scripts
 
 | Script                                                                                  | Purpose | Working? | Fate |
 |-----------------------------------------------------------------------------------------|---------|----------|------|
-| [local_setup.sh](scripts/local_tests/local_setup.sh)                                    |         |          |      |
-| [run_tests.sh](scripts/local_tests/run_tests.sh)                                        |         |          |      |
-| [test_e2e.sh](scripts/local_tests/test_e2e.sh)                                          |         |          |      |
-| [test_enrichment.sh](scripts/local_tests/test_enrichment.sh)                            |         |          |      |
-| [test_helpers.sh](scripts/local_tests/test_helpers.sh)                                  |         |          |      |
-| [account-level-cwlogs.sh](scripts/utils/account-level-cwlogs.sh)                        |         |          |      |
-| [debug_preferences_endpoint.sh](scripts/remote_tests/debug_preferences_endpoint.sh)     |         |          |      |
-| [dynamodb_inspector.sh](scripts/utils/dynamodb_inspector.sh)                            |         |          |      |
-| [get_lambda_logs.sh](scripts/utils/get_lambda_logs.sh)                                  |         |          |      |
-| [remote_deploy.sh](scripts/deploy/remote_deploy.sh)                                     |         |          |      |
-| [remote_deploy_and_smoke_test.sh](scripts/remote_tests/remote_deploy_and_smoke_test.sh) |         |          |      |
-| [remote_web_api_tests.sh](scripts/remote_tests/remote_web_api_tests.sh)                 |         |          |      |
-| [run_admin_api_tests.sh](scripts/remote_tests/run_admin_api_tests.sh)                   |         |          |      |
-| [set-cognito-password.sh](scripts/deploy/set-cognito-password.sh)                       |         |          |      |
-| [teardown.sh](scripts/deploy/teardown.sh)                                               |         |          |      |
-| [update_website_config.sh](scripts/deploy/update_website_config.sh)                     |         |          |      |
+| [local_setup.sh](scripts/local_tests/local_setup.sh)                                    | Initializes local development infrastructure for the event-streaming app. It starts LocalStack via Docker/Podman, then creates a DynamoDB table, Kinesis stream, and Secrets Manager secret so you can develop and test locally without AWS.         | Yes         | Keep      |
+| [run_tests.sh](scripts/local_tests/run_tests.sh)                                        | Runs a suite of local tests using `sam local invoke` for Lambda functions. Tests include periodic reference data updates, user preferences API calls (get sources, get genres, put/get preferences), and integration tests for title ingestion and enrichment. | Yes         | Keep      |
+| [test_e2e.sh](scripts/local_tests/test_e2e.sh)                                          | Performs end-to-end integration test of the title ingestion pipeline. Sets up test data, invokes the ingestion Lambda, verifies Kinesis output, invokes the consumer Lambda, and validates DynamoDB records.         | Yes         | Keep      |
+| [test_enrichment.sh](scripts/local_tests/test_enrichment.sh)                            | Tests the title enrichment Lambda function by creating a test title record, invoking the enrichment function, and verifying that enriched data (plot, poster, rating) is written to DynamoDB.         | Yes         | Keep      |
+| [test_helpers.sh](scripts/local_tests/test_helpers.sh)                                  | Provides helper functions for local test execution including colored output printing (info, success, error) and a reusable test runner function that invokes SAM local functions and validates responses.         | Yes         | Keep      |
+| [account-level-cwlogs.sh](scripts/utils/account-level-cwlogs.sh)                        | Sets up API Gateway CloudWatch Logs by creating IAM roles and configuring account-level logging settings. Used for debugging API Gateway requests in development environments.         | Unknown     | Review    |
+| [debug_preferences_endpoint.sh](scripts/remote_tests/debug_preferences_endpoint.sh)     | Diagnostic tool for troubleshooting the GET /preferences endpoint. Captures detailed request/response information, CloudWatch logs, and API Gateway configuration to help identify and resolve authentication or configuration issues.         | Yes         | Keep      |
+| [dynamodb_inspector.sh](scripts/utils/dynamodb_inspector.sh)                            | Inspects DynamoDB table contents to provide a summary report including source/genre counts, user preferences, title counts per combination, and identifies unenriched titles. Useful for debugging data ingestion issues.         | Yes         | Keep      |
+| [get_lambda_logs.sh](scripts/utils/get_lambda_logs.sh)                                  | Fetches and displays the most recent CloudWatch logs for a specified Lambda function by partial name match. Helps with quick debugging of Lambda execution issues without navigating the AWS console.         | Yes         | Keep      |
+| [remote_deploy.sh](scripts/deploy/remote_deploy.sh)                                     | Deploys the complete application stack to AWS with SAM, handles failed stack recovery, sets Cognito passwords, updates website configuration, syncs web assets to S3, and clears CloudFront cache. Comprehensive deployment script for production-like deployments.         | Yes         | Keep      |
+| [remote_deploy_and_smoke_test.sh](scripts/remote_tests/remote_deploy_and_smoke_test.sh) | End-to-end smoke test that deploys the stack, triggers reference data refresh, creates user preferences, triggers ingestion, waits for enrichment, verifies data in DynamoDB, dumps data to JSON files, and tears down the infrastructure.         | Yes         | Keep      |
+| [remote_web_api_tests.sh](scripts/remote_tests/remote_web_api_tests.sh)                 | Integration tests for the Web API endpoints. Tests CORS preflight, public endpoints (GET /sources, /genres), protected endpoints (GET /preferences, /titles, /recommendations), and PUT /preferences operations. Validates authentication and data retrieval.         | Yes         | Keep      |
+| [run_admin_api_tests.sh](scripts/remote_tests/run_admin_api_tests.sh)                   | Integration tests for the Admin API endpoints. Tests GET /admin/dynamodb/summary, POST /admin/reference/refresh, POST /admin/titles/refresh, and POST /admin/titles/enrich endpoints. Validates admin authentication and Lambda invocation functionality.         | Yes         | Keep      |
+| [set-cognito-password.sh](scripts/deploy/set-cognito-password.sh)                       | Sets permanent passwords for the test and admin users in Cognito User Pool. Fetches usernames from CloudFormation stack outputs and sets passwords so users can log in without password reset workflows. Used during deployment and testing.         | Yes         | Keep      |
+| [teardown.sh](scripts/deploy/teardown.sh)                                               | Tears down the deployed infrastructure by emptying and deleting the S3 website bucket, then deleting the CloudFormation stack. Used for cleanup after testing or when redeploying from scratch.         | Yes         | Keep      |
+| [update_website_config.sh](scripts/deploy/update_website_config.sh)                     | Updates website configuration by generating a JavaScript config file with Cognito and API endpoints from CloudFormation stack outputs, then syncs all web assets to S3. Used to configure the frontend with deployed backend URLs.         | Yes         | Keep      |
 
 #### Setup a Cloudformation pipeline in a secure way to deploy the application
 

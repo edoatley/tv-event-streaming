@@ -2,7 +2,7 @@
 # Helper functions for the local test execution script.
 # This file is intended to be sourced, not executed directly.
 
-DOCKER_NETWORK="event-streaming-app_podman"
+DOCKER_NETWORK="tv-event-streaming_app-network"
 
 # Helper functions to print colored text
 print_info() {
@@ -15,6 +15,31 @@ print_success() {
 
 print_error() {
     printf "\033[1;31m%s\033[0m\n" "$1" >&2
+}
+
+# --- Container Tool Detection ---
+# Detects whether to use Docker or Podman
+# Sets the CONTAINER_TOOL environment variable
+detect_container_tool() {
+    if command -v podman &> /dev/null; then
+        # Check if docker is actually podman
+        if command -v docker &> /dev/null && docker ps &> /dev/null 2>&1; then
+            # Check docker version to see if it's podman
+            if docker version 2>&1 | grep -q "podman"; then
+                export CONTAINER_TOOL="podman"
+                echo "Detected: Using Podman (docker is aliased to podman)"
+            else
+                export CONTAINER_TOOL="docker"
+                echo "Detected: Using Docker"
+            fi
+        else
+            export CONTAINER_TOOL="podman"
+            echo "Detected: Using Podman"
+        fi
+    else
+        export CONTAINER_TOOL="docker"
+        echo "Detected: Using Docker"
+    fi
 }
 
 # --- Reusable Test Runner Function ---

@@ -6,7 +6,7 @@ set -e # Exit immediately if a command exits with a non-zero status.
 set -o pipefail # The return value of a pipeline is the status of the last command to exit with a non-zero status.
 
 # --- Configuration ---
-STACK_NAME="uktv-event-streaming-app"
+STACK_NAME="${STACK_NAME:-tv-event-streaming-gha}"
 PROFILE="streaming"
 REGION="eu-west-2"
 TEST_USER_PASSWORD="A-Strong-P@ssw0rd1" # This should match the password set in remote_deploy.sh
@@ -146,6 +146,13 @@ if ! command -v jq &> /dev/null; then
     error "jq is not installed. Please install it to run these tests (e.g., 'brew install jq' or 'sudo apt-get install jq')."
 fi
 log "Prerequisite check passed (jq is installed)."
+
+# run set-cognito-password.sh to set the password for the test user
+log "Step 0: Setting password for test user..."
+root_dir=$(git rev-parse --show-toplevel)
+$root_dir/scripts/deploy/set-cognito-password.sh "$STACK_NAME" "$PROFILE" "$REGION"
+
+log "Password for test user set successfully."
 
 # Step 1: Check AWS session
 log "Step 1: Checking AWS SSO session for profile: ${PROFILE}..."

@@ -15,8 +15,7 @@ set -euo pipefail
 
 # --- Configuration ---
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-#SCRIPT_DIR=${0:a:h}
-PROJECT_ROOT=$(cd "${SCRIPT_DIR}/../../.." && pwd)
+PROJECT_ROOT=$(cd "${SCRIPT_DIR}/../.." && pwd)
 
 # Source the helper functions for colored output
 # shellcheck source=test_helpers.sh
@@ -27,7 +26,7 @@ PROFILE_NAME="streaming"
 ENDPOINT_URL="http://localhost:4566"
 TABLE_NAME="UKTVProgrammesLocal"
 STREAM_NAME="ProgrammeDataStreamLocal"
-DOCKER_NETWORK="event-streaming-app_podman"
+# DOCKER_NETWORK is defined in test_helpers.sh
 
 # --- Test Data ---
 KINESIS_RECORDS_JSON="" # Global variable to hold the records for the consumer

@@ -16,8 +16,7 @@ set -euo pipefail
 
 # --- Configuration ---
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-#SCRIPT_DIR=${0:a:h}
-PROJECT_ROOT=$(cd "${SCRIPT_DIR}/../../.." && pwd)
+PROJECT_ROOT=$(cd "${SCRIPT_DIR}/../.." && pwd)
 
 # Source the helper functions for colored output
 # shellcheck source=test_helpers.sh
@@ -27,7 +26,7 @@ source "${SCRIPT_DIR}/test_helpers.sh"
 PROFILE_NAME="streaming"
 ENDPOINT_URL="http://localhost:4566"
 TABLE_NAME="UKTVProgrammesLocal"
-DOCKER_NETWORK="event-streaming-app_podman"
+# DOCKER_NETWORK is defined in test_helpers.sh
 
 # --- Test Data ---
 # Use a known, valid title ID for a real API call

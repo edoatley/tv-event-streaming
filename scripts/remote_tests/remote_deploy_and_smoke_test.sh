@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-STACK_NAME="uktv-event-streaming-app"
+STACK_NAME="${STACK_NAME:-uktv-event-streaming-app}"
 PROFILE="streaming"
 REGION="eu-west-2"
 

@@ -8,8 +8,7 @@ set -euo pipefail
 
 # Get the script directory and the directory from which to invoke the sam calls
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-#SCRIPT_DIR=${0:a:h}
-PROJECT_ROOT=$(cd "${SCRIPT_DIR}/../../.." && pwd)
+PROJECT_ROOT=$(cd "${SCRIPT_DIR}/../.." && pwd)
 ENV_DIR="${PROJECT_ROOT}/env"
 EVENT_DIR="${PROJECT_ROOT}/events"
 PROFILE_NAME="streaming"

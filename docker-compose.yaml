@@ -5,18 +5,18 @@ services:
     ports:
       - "4566:4566"
     networks:
-      - podman
-    security_opt:
-      - "label=disable"
+      - app-network
     environment:
       - DEBUG=1
       - SERVICES=secretsmanager,dynamodb,kinesis
       - DYNAMODB_IN_MEMORY=1
       - EDGE_PORT=4566
     volumes:
-      - "~/.localstack:/var/lib/localstack"
-      - "/var/run/docker.sock:/var/run/docker.sock"
+      - localstack-data:/var/lib/localstack
 
 networks:
-  podman:
+  app-network:
     driver: bridge
+
+volumes:
+  localstack-data:

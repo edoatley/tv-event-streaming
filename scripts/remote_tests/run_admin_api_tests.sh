@@ -5,7 +5,7 @@ set -e # Exit immediately if a command exits with a non-zero status.
 set -o pipefail # The return value of a pipeline is the status of the last command to exit with a non-zero status.
 
 # --- Configuration ---
-STACK_NAME="uktv-event-streaming-app"
+STACK_NAME="${STACK_NAME:-tv-event-streaming-gha}"
 PROFILE="streaming"
 REGION="eu-west-2"
 # This password must match the one in set-cognito-password.sh
@@ -92,6 +92,9 @@ admin_api_curl() {
 
 # --- Main Script ---
 echo "🚀 Starting Admin API Integration Tests..."
+
+# Get script directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Step 0: Prerequisite check
 log "Step 0: Checking prerequisites..."
@@ -180,14 +183,14 @@ REFRESH_PAYLOAD='{"refresh_sources": "Y", "refresh_genres": "Y", "regions": "GB"
 admin_api_curl "POST" "/admin/reference/refresh" "$REFRESH_PAYLOAD" > /dev/null 2>&1
 log "POST /admin/reference/refresh initiated. Waiting for logs..."
 sleep 20 # Wait for logs to be generated
-./resources/scripts/get_lambda_logs.sh "$PERIODIC_REFERENCE_FUNCTION_NAME" "$PROFILE" "$REGION"
+"${SCRIPT_DIR}/../utils/get_lambda_logs.sh" "$PERIODIC_REFERENCE_FUNCTION_NAME" "$PROFILE" "$REGION"
 
 # --- Test POST /admin/titles/refresh ---
 log "Testing POST /admin/titles/refresh..."
 admin_api_curl "POST" "/admin/titles/refresh" '{}' > /dev/null 2>&1
 log "POST /admin/titles/refresh initiated. Waiting for logs..."
 sleep 20 # Wait for logs to be generated
-./resources/scripts/get_lambda_logs.sh "$USER_PREFS_INGESTION_FUNCTION_NAME" "$PROFILE" "$REGION"
+"${SCRIPT_DIR}/../utils/get_lambda_logs.sh" "$USER_PREFS_INGESTION_FUNCTION_NAME" "$PROFILE" "$REGION"
 
 
 # --- Test POST /admin/titles/enrich ---
@@ -195,7 +198,7 @@ log "Testing POST /admin/titles/enrich..."
 admin_api_curl "POST" "/admin/titles/enrich" '{}' > /dev/null 2>&1
 log "POST /admin/titles/enrich initiated. Waiting for logs..."
 sleep 20 # Wait for logs to be generated
-./resources/scripts/get_lambda_logs.sh "$TITLE_ENRICHMENT_FUNCTION_NAME" "$PROFILE" "$REGION"
+"${SCRIPT_DIR}/../utils/get_lambda_logs.sh" "$TITLE_ENRICHMENT_FUNCTION_NAME" "$PROFILE" "$REGION"
 
 echo ""
 echo "🎉 All Admin API integration tests passed successfully! 🎉"
