@@ -470,10 +470,10 @@ The admin Lambda function will query DynamoDB to gather table metadata.
 
 Now most stuff is working we will stabilise by:
 
-1. Reviewing test scripts to validate they all work and rationalising
-2. Adding A UI test suite
-3. Reviewing security and ensuring it is robust
-4. Define a deployment pipeline
+- [x] 1. Reviewing test scripts to validate they all work and rationalising
+- [ ] 2. Adding A UI test suite
+- [ ] 3. Reviewing security and ensuring it is robust
+- [ ] 4. Define a deployment pipeline
 
 #### Review Scripts
 
