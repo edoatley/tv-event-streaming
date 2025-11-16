@@ -44,8 +44,16 @@
     - [Admin UI Integration Plan](#admin-ui-integration-plan)
     - [Testing plan](#testing-plan)
   - [Step 17 - Web UI tests and pipeline for deployment - **In progress**](#step-17---web-ui-tests-and-pipeline-for-deployment---in-progress)
+    - [UI Test Suite](#ui-test-suite)
+      - [Test Suite Location](#test-suite-location)
+      - [Quick Start](#quick-start)
+      - [Test Coverage](#test-coverage)
+      - [Test Architecture](#test-architecture)
+      - [Authentication](#authentication)
+      - [Running Tests](#running-tests)
+      - [Test Data Management](#test-data-management)
+      - [CI/CD Integration](#cicd-integration)
       - [Review Scripts](#review-scripts)
-      - [Setup a Cloudformation pipeline in a secure way to deploy the application](#setup-a-cloudformation-pipeline-in-a-secure-way-to-deploy-the-application)
   - [Step 18 - schedule the API calls to get the shows and make it efficient](#step-18---schedule-the-api-calls-to-get-the-shows-and-make-it-efficient)
   - [Step 19 - consider improvements to admin and main screens](#step-19---consider-improvements-to-admin-and-main-screens)
   - [Cleanup](#cleanup)
@@ -471,9 +479,103 @@ The admin Lambda function will query DynamoDB to gather table metadata.
 Now most stuff is working we will stabilise by:
 
 - [x] 1. Reviewing test scripts to validate they all work and rationalising
-- [ ] 2. Adding A UI test suite
+- [x] 2. Adding A UI test suite
 - [ ] 3. Reviewing security and ensuring it is robust
-- [ ] 4. Define a deployment pipeline
+- [ ] 4. Define a deployment pipeline that will run the UI test suite against the deployed application (sub workflow of .github/workflows/deploy-app-to-aws.yaml?)
+
+### UI Test Suite
+
+A comprehensive automated UI test suite has been implemented using Playwright. The test suite validates user authentication, preferences management, title browsing, and admin functionality.
+
+#### Test Suite Location
+
+The UI test suite is located in `tests/ui/`. See [tests/ui/README.md](tests/ui/README.md) for detailed documentation.
+
+#### Quick Start
+
+1. **Install dependencies:**
+   ```bash
+   cd tests/ui
+   npm install
+   npx playwright install
+   ```
+
+2. **Configure environment:**
+   ```bash
+   cp .env.example .env
+   # Edit .env and set required values
+   # Or use the helper script to fetch from CloudFormation:
+   ./scripts/fetch-stack-outputs.sh <stack-name>
+   ```
+
+3. **Run tests:**
+   ```bash
+   ./run-tests.sh
+   ```
+
+#### Test Coverage
+
+The test suite includes:
+
+- **Authentication Tests** (`specs/auth.spec.ts`): Login, logout, token persistence, access control
+- **Preferences Tests** (`specs/preferences.spec.ts`): Viewing and updating user preferences for sources and genres
+- **Titles Tests** (`specs/titles.spec.ts`): Browsing titles, viewing details, recommendations filtering
+- **Admin Tests** (`specs/admin.spec.ts`): Admin panel access control, data refresh operations, DynamoDB summary
+
+#### Test Architecture
+
+- **Page Object Model**: All UI interactions are abstracted into Page Objects for maintainability
+- **Test Fixtures**: Reusable authentication fixtures for regular users and admins
+- **Helpers**: API helpers, Cognito authentication, and custom wait conditions
+- **Browser Support**: Tests run in both Chrome and Firefox
+
+#### Authentication
+
+The test suite supports two authentication approaches:
+
+1. **Programmatic Authentication** (primary): Uses AWS SDK to authenticate with Cognito for realistic end-to-end testing
+2. **Mocked Authentication** (secondary): Uses mocked tokens for faster, isolated component testing
+
+#### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run in headed mode (see browser)
+npm run test:headed
+
+# Run specific test file
+npm run test:auth
+npm run test:preferences
+npm run test:titles
+npm run test:admin
+
+# Run for specific browser
+npm run test:chrome
+npm run test:firefox
+
+# Debug mode
+npm run test:debug
+```
+
+#### Test Data Management
+
+Before running tests, ensure:
+- Test users exist in Cognito (test.user@example.com, admin.user@example.com)
+- User passwords are set
+- Admin user is in SecurityAdmins group
+- Reference data (sources, genres) exists in DynamoDB
+- Title data exists (may need to trigger ingestion)
+
+Helper scripts are available:
+- `scripts/setup-test-data.sh` - Set up test data
+- `scripts/ensure-test-data.sh` - Ensure test data exists (idempotent)
+- `scripts/fetch-stack-outputs.sh` - Fetch configuration from CloudFormation
+
+#### CI/CD Integration
+
+The test suite is designed for local execution first. CI/CD integration will be added in a future phase. When ready, tests can be integrated into the GitHub Actions workflow to run after deployment.
 
 #### Review Scripts
 
@@ -495,10 +597,6 @@ Now most stuff is working we will stabilise by:
 | [set-cognito-password.sh](scripts/deploy/set-cognito-password.sh)                       | Sets permanent passwords for the test and admin users in Cognito User Pool. Fetches usernames from CloudFormation stack outputs and sets passwords so users can log in without password reset workflows. Used during deployment and testing.         | Yes         | Keep      |
 | [teardown.sh](scripts/deploy/teardown.sh)                                               | Tears down the deployed infrastructure by emptying and deleting the S3 website bucket, then deleting the CloudFormation stack. Used for cleanup after testing or when redeploying from scratch.         | Yes         | Keep      |
 | [update_website_config.sh](scripts/deploy/update_website_config.sh)                     | Updates website configuration by generating a JavaScript config file with Cognito and API endpoints from CloudFormation stack outputs, then syncs all web assets to S3. Used to configure the frontend with deployed backend URLs.         | Yes         | Keep      |
-
-#### Setup a Cloudformation pipeline in a secure way to deploy the application
-
-1. needed to set up OIDC authentication between GH actions and AWS:  
 
 ## Step 18 - schedule the API calls to get the shows and make it efficient
 
