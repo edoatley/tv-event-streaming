@@ -25,11 +25,27 @@ Automated UI test suite for the TV Event Streaming application using Playwright.
    ```
 
 3. **Configure environment variables:**
+   
+   **Option 1: Use build-env.sh (Recommended)**
    ```bash
-   cp .env.example .env
+   ./scripts/build-env.sh <stack-name> [region] [profile]
    ```
    
-   Edit `.env` and set the following required variables:
+   This script automatically:
+   - Copies `env.example` to `.env` if it doesn't exist
+   - Sources values from the root project `.env` file (if it exists at the project root)
+   - Fetches CloudFormation stack outputs and populates `.env`
+   - Checks for missing required variables
+   
+   **Option 2: Manual setup**
+   ```bash
+   cp env.example .env
+   # Edit .env and set required values
+   # Or use fetch-stack-outputs.sh to get values from CloudFormation:
+   ./scripts/fetch-stack-outputs.sh <stack-name> <region>
+   ```
+   
+   Required variables:
    - `BASE_URL` - The URL of your deployed application
    - `COGNITO_USER_POOL_ID` - Cognito User Pool ID
    - `COGNITO_CLIENT_ID` - Cognito App Client ID
@@ -40,12 +56,6 @@ Automated UI test suite for the TV Event Streaming application using Playwright.
    - `ADMIN_USER_PASSWORD` - Admin user password
    - `AWS_REGION` - AWS region (default: eu-west-2)
    - `AWS_PROFILE` - AWS profile name (default: streaming)
-
-4. **Fetch CloudFormation outputs (optional):**
-   ```bash
-   ./scripts/fetch-stack-outputs.sh <stack-name> <region>
-   ```
-   This script will help populate your `.env` file with values from CloudFormation stack outputs.
 
 ## Running Tests
 
@@ -229,7 +239,7 @@ Before running tests, ensure:
 
 ### Tests fail with "BASE_URL not set"
 - Set `BASE_URL` in `.env` file
-- Or use `fetch-stack-outputs.sh` to get it from CloudFormation
+- Or use `build-env.sh` or `fetch-stack-outputs.sh` to get it from CloudFormation
 
 ### Tests timeout
 - Check network connectivity to the application

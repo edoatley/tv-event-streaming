@@ -126,8 +126,8 @@ Resources:
       Parameters:
         RootStackName: !Ref AWS::StackName
         WebsiteDistributionDomainName: !GetAtt WebsiteDistribution.DomainName
-        TestUserName: !Ref TestUserName
-        AdminUserName: !Ref AdminUserName
+        UserNames: !Sub "${TestUserName},${AdminUserName}"
+        AdminUserNames: !Ref AdminUserName
 
   AdminApiApp:
     Type: AWS::Serverless::Application

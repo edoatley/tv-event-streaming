@@ -9,3 +9,4 @@ local-secrets.json
 .venv
 .env
 /.aws-sam/
+.env

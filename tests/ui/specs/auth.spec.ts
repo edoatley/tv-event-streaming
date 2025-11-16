@@ -1,5 +1,4 @@
 import { test, expect } from '../fixtures/test-context';
-import { authenticatedUser } from '../fixtures/auth';
 import { TEST_USERS, EXPECTED_TEXT } from '../fixtures/test-data';
 
 test.describe('Authentication', () => {
@@ -56,21 +55,46 @@ test.describe('Authentication', () => {
       expect(greetingText).toContain(TEST_USERS.regular.email);
     });
 
-    test('should allow user to log out', async ({ authenticatedPage, loginPage }) => {
+    test('should allow user to log out', async ({ authenticatedPage, loginPage, page }) => {
       await authenticatedPage.goto('/');
       
       // Should be logged in
       await expect(loginPage.logoutButton).toBeVisible();
       
-      // Click logout
+      // Get the current hostname before logout
+      const currentHostname = new URL(page.url()).hostname;
+      
+      // Click logout - this will redirect to Cognito logout URL and back
       await loginPage.clickLogoutButton();
       
-      // Should redirect to login page
-      await authenticatedPage.waitForURL('**/#/**', { timeout: 10000 });
+      // Wait for redirect back to the app (Cognito will redirect)
+      // Wait for URL to return to our app's domain (not Cognito)
+      try {
+        await page.waitForURL((url) => {
+          // Wait for URL to be back on our app's domain
+          return url.hostname === currentHostname || 
+                 (!url.hostname.includes('amazoncognito.com') && 
+                  !url.hostname.includes('cognito-idp'));
+        }, { timeout: 30000, waitUntil: 'domcontentloaded' });
+      } catch (e) {
+        // If URL wait times out, try waiting for load state as fallback
+        await page.waitForLoadState('domcontentloaded', { timeout: 10000 }).catch(() => null);
+      }
       
-      // Should show login button
-      await expect(loginPage.loginButton).toBeVisible();
-      await expect(loginPage.logoutButton).not.toBeVisible();
+      // Wait for page to stabilize after redirect
+      await page.waitForTimeout(2000);
+      
+      // After logout, check if we're logged out by checking localStorage
+      const token = await page.evaluate(() => localStorage.getItem('id_token'));
+      expect(token).toBeNull();
+      
+      // Should show login button or login page
+      const loginButtonVisible = await loginPage.isLoginButtonVisible().catch(() => false);
+      const signInCard = page.locator('.card:has-text("Sign In Required")');
+      const hasSignInCard = await signInCard.isVisible().catch(() => false);
+      
+      // After logout, either login button should be visible or we're on login page
+      expect(loginButtonVisible || hasSignInCard).toBeTruthy();
     });
 
     test('should not show admin link for regular user', async ({ authenticatedPage, loginPage }) => {

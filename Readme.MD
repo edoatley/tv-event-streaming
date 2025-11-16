@@ -54,8 +54,9 @@
       - [Test Data Management](#test-data-management)
       - [CI/CD Integration](#cicd-integration)
       - [Review Scripts](#review-scripts)
-  - [Step 18 - schedule the API calls to get the shows and make it efficient](#step-18---schedule-the-api-calls-to-get-the-shows-and-make-it-efficient)
-  - [Step 19 - consider improvements to admin and main screens](#step-19---consider-improvements-to-admin-and-main-screens)
+  - [Step 18 - add another a lambda summary to admin screen](#step-18---add-another-a-lambda-summary-to-admin-screen)
+  - [Step 19 - schedule the API calls to get the shows and make it efficient](#step-19---schedule-the-api-calls-to-get-the-shows-and-make-it-efficient)
+  - [Step 20 - consider improvements to admin and main screens](#step-20---consider-improvements-to-admin-and-main-screens)
   - [Cleanup](#cleanup)
 <!-- TOC -->
 
@@ -502,11 +503,21 @@ The UI test suite is located in `tests/ui/`. See [tests/ui/README.md](tests/ui/R
 
 2. **Configure environment:**
    ```bash
-   cp .env.example .env
+   # Option 1: Use build-env.sh (recommended - automatically builds .env from multiple sources)
+   ./scripts/build-env.sh <stack-name> [region] [profile]
+   
+   # Option 2: Manual setup
+   cp env.example .env
    # Edit .env and set required values
    # Or use the helper script to fetch from CloudFormation:
    ./scripts/fetch-stack-outputs.sh <stack-name>
    ```
+   
+   The `build-env.sh` script will:
+   - Copy `env.example` to `.env` if it doesn't exist
+   - Source values from the root project `.env` file (if it exists)
+   - Fetch CloudFormation stack outputs and populate `.env`
+   - Check for missing required variables
 
 3. **Run tests:**
    ```bash
@@ -598,13 +609,25 @@ The test suite is designed for local execution first. CI/CD integration will be 
 | [teardown.sh](scripts/deploy/teardown.sh)                                               | Tears down the deployed infrastructure by emptying and deleting the S3 website bucket, then deleting the CloudFormation stack. Used for cleanup after testing or when redeploying from scratch.         | Yes         | Keep      |
 | [update_website_config.sh](scripts/deploy/update_website_config.sh)                     | Updates website configuration by generating a JavaScript config file with Cognito and API endpoints from CloudFormation stack outputs, then syncs all web assets to S3. Used to configure the frontend with deployed backend URLs.         | Yes         | Keep      |
 
-## Step 18 - schedule the API calls to get the shows and make it efficient
+## Step 18 - add another a lambda summary to admin screen
+
+Add a new tab or panel to the admin screen
+
+```text
+As a system admin
+I want to be able to list recent invocations of my lambda functions
+So that I can see what lambdas ran what the outcome was and some of the associated logs 
+```
+
+the solution should achieve this in the simplest way possible. It could extend the existing admin Lambda or be a new one that takes the lambda function ARN as an input and fetches the relevant data from AWS
+
+## Step 19 - schedule the API calls to get the shows and make it efficient
 
 The current title ingestion process is inefficient. A more efficient approach would be to:
 1.  Gather all unique **source and genre combinations** that users have explicitly selected.
 2.  Make a single, paginated API call to WatchMode that can filter on these specific combinations.
 
-## Step 19 - consider improvements to admin and main screens
+## Step 20 - consider improvements to admin and main screens
 
 1. Screen that shows the data in the table
 2. Screen that shows when the different Lambdas were called

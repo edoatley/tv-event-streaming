@@ -6,7 +6,13 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TEST_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# If script is in tests/ui/run-tests.sh, TEST_DIR should be tests/ui
+# If script is in tests/ui/scripts/run-tests.sh, TEST_DIR should be tests/ui
+if [[ "${SCRIPT_DIR}" == *"/scripts" ]]; then
+  TEST_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+else
+  TEST_DIR="${SCRIPT_DIR}"
+fi
 
 cd "${TEST_DIR}"
 
@@ -63,6 +69,7 @@ SPEC=""
 HEADED=false
 DEBUG=false
 UI=false
+HTML_REPORT=false
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -76,6 +83,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --ui)
       UI=true
+      shift
+      ;;
+    --html-report)
+      HTML_REPORT=true
       shift
       ;;
     --browser=*)
@@ -93,6 +104,7 @@ while [[ $# -gt 0 ]]; do
       echo "  --headed              Run tests in headed mode (show browser)"
       echo "  --debug               Run tests in debug mode"
       echo "  --ui                  Run tests in UI mode (interactive)"
+      echo "  --html-report         Show HTML report server after tests (default: off)"
       echo "  --browser=<browser>   Run tests for specific browser (chromium, firefox, webkit)"
       echo "  --spec=<file>         Run specific test file"
       echo "  --help                 Show this help message"
@@ -108,6 +120,11 @@ done
 
 # Build command
 CMD="npx playwright test"
+
+# Set HTML report environment variable if requested
+if [ "$HTML_REPORT" = true ]; then
+  export PLAYWRIGHT_HTML_REPORT=true
+fi
 
 if [ "$HEADED" = true ]; then
   CMD="${CMD} --headed"

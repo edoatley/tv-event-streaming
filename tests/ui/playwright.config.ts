@@ -24,8 +24,12 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
+  // HTML reports are always generated, but server only opens if PLAYWRIGHT_HTML_REPORT=true
+  // View reports manually with: npx playwright show-report
   reporter: [
-    ['html'],
+    ['html', { 
+      open: process.env.PLAYWRIGHT_HTML_REPORT === 'true' ? 'always' : 'never' 
+    }],
     ['list']
   ],
   
@@ -42,17 +46,31 @@ export default defineConfig({
     
     /* Video on failure */
     video: 'retain-on-failure',
+    
+    /* Navigation timeout */
+    navigationTimeout: 30000,
+    
+    /* Action timeout */
+    actionTimeout: 15000,
   },
 
   /* Configure projects for major browsers */
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { 
+        ...devices['Desktop Chrome'],
+        // Run headless by default unless --headed flag is used
+        headless: true,
+      },
     },
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      use: { 
+        ...devices['Desktop Firefox'],
+        // Run headless by default unless --headed flag is used
+        headless: true,
+      },
     },
   ],
 

@@ -1,5 +1,4 @@
 import { test, expect } from '../fixtures/test-context';
-import { authenticatedUser, authenticatedAdmin } from '../fixtures/auth';
 import { TEST_USERS } from '../fixtures/test-data';
 
 test.describe('Admin Panel', () => {

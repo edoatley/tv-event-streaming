@@ -6,8 +6,33 @@ import * as path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const BASE_URL = process.env.BASE_URL || '';
-// API_ENDPOINT defaults to BASE_URL if not set, removing trailing slash
-const API_ENDPOINT = process.env.API_ENDPOINT || (BASE_URL ? BASE_URL.replace(/\/$/, '') : '');
+// API_ENDPOINT can be explicitly set, otherwise will be read from page's appConfig
+const API_ENDPOINT_ENV = process.env.API_ENDPOINT || '';
+
+/**
+ * Gets the API endpoint from the page's appConfig or environment variable
+ */
+async function getApiEndpoint(page: Page): Promise<string> {
+  // If explicitly set in env, use that
+  if (API_ENDPOINT_ENV) {
+    return API_ENDPOINT_ENV;
+  }
+  
+  // Otherwise, read from the page's appConfig (same as the web app uses)
+  try {
+    const apiEndpoint = await page.evaluate(() => {
+      return (window as any).appConfig?.ApiEndpoint || '';
+    });
+    if (apiEndpoint) {
+      return apiEndpoint;
+    }
+  } catch {
+    // If appConfig not available, fall back to BASE_URL
+  }
+  
+  // Fallback to BASE_URL if nothing else works
+  return BASE_URL ? BASE_URL.replace(/\/$/, '') : '';
+}
 
 /**
  * Makes an API call using fetch from the browser context
@@ -19,7 +44,9 @@ export async function apiCall(
   body?: any,
   token?: string
 ): Promise<any> {
-  const url = endpoint.startsWith('http') ? endpoint : `${API_ENDPOINT}${endpoint}`;
+  // Get the API endpoint (from env, page config, or fallback)
+  const apiEndpoint = await getApiEndpoint(page);
+  const url = endpoint.startsWith('http') ? endpoint : `${apiEndpoint}${endpoint}`;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',

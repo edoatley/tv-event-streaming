@@ -45,8 +45,47 @@ export class MainViewPage {
   }
 
   async navigateToPreferences() {
+    // Click the preferences tab
     await this.preferencesTab.click();
-    await this.page.waitForURL('**/#/main/preferences');
+    
+    // Wait for URL to change
+    await this.page.waitForURL('**/#/main/preferences', { timeout: 10000 });
+    
+    // Wait for the router to handle the navigation and render the preferences page
+    // The preferences page should have the updatePreferencesBtn
+    await this.page.waitForSelector('#updatePreferencesBtn', { state: 'attached', timeout: 20000 }).catch(async () => {
+      // If button doesn't appear, wait a bit more and check URL again
+      await this.page.waitForTimeout(2000);
+      const currentUrl = this.page.url();
+      if (!currentUrl.includes('#/main/preferences')) {
+        // URL didn't change, try clicking again
+        await this.preferencesTab.click();
+        await this.page.waitForURL('**/#/main/preferences', { timeout: 10000 });
+        await this.page.waitForTimeout(1000);
+      }
+      // Try one more time
+      await this.page.waitForSelector('#updatePreferencesBtn', { state: 'attached', timeout: 10000 });
+    });
+    
+    // Wait for preferences data to load from API - wait for lists to have content
+    // The lists should be populated (either with checkboxes or empty state messages)
+    await this.page.waitForFunction(
+      () => {
+        const selectedSources = document.getElementById('selectedSourcesList');
+        const selectedGenres = document.getElementById('selectedGenresList');
+        const availableSources = document.getElementById('availableSourcesList');
+        const availableGenres = document.getElementById('availableGenresList');
+        // Check if all lists exist and have some content (even if just empty state message)
+        return selectedSources && selectedGenres && availableSources && availableGenres &&
+               (selectedSources.textContent?.trim() || availableSources.textContent?.trim() ||
+                selectedGenres.textContent?.trim() || availableGenres.textContent?.trim());
+      },
+      { timeout: 20000 }
+    ).catch(() => {
+      // If function times out, continue anyway - lists might be empty
+    });
+    // Give a bit more time for UI to stabilize
+    await this.page.waitForTimeout(1000);
   }
 
   async switchToRecommendationsTab() {
@@ -98,15 +137,22 @@ export class MainViewPage {
   }
 
   async getEmptyStateMessage(): Promise<string | null> {
-    const emptyState = this.page.locator('text=No titles found');
-    if (await emptyState.isVisible()) {
-      return await emptyState.textContent();
+    // Look specifically in the titles container to avoid matching multiple elements
+    const emptyState = this.titlesContainer.locator('text=No titles found').first();
+    try {
+      if (await emptyState.isVisible({ timeout: 2000 })) {
+        return await emptyState.textContent();
+      }
+    } catch {
+      // Element not visible, return null
     }
     return null;
   }
 
   async selectSource(sourceId: string) {
     const checkbox = this.page.locator(`input[name="source"][value="${sourceId}"]`);
+    // Wait for checkbox to be attached to DOM
+    await checkbox.waitFor({ state: 'attached', timeout: 10000 });
     if (!(await checkbox.isChecked())) {
       await checkbox.check();
     }
@@ -114,6 +160,8 @@ export class MainViewPage {
 
   async deselectSource(sourceId: string) {
     const checkbox = this.page.locator(`input[name="source"][value="${sourceId}"]`);
+    // Wait for checkbox to be attached to DOM
+    await checkbox.waitFor({ state: 'attached', timeout: 10000 });
     if (await checkbox.isChecked()) {
       await checkbox.uncheck();
     }

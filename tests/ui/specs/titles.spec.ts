@@ -1,5 +1,4 @@
 import { test, expect } from '../fixtures/test-context';
-import { authenticatedUser } from '../fixtures/auth';
 import { setUserPreferences, getSources, getGenres } from '../helpers/api-helper';
 import { EXPECTED_TEXT } from '../fixtures/test-data';
 
@@ -84,15 +83,28 @@ test.describe('Titles View', () => {
       await mainViewPage.navigateToTitles();
       await mainViewPage.waitForTitlesToLoad();
 
-      // Should show empty state
-      const emptyState = await mainViewPage.getEmptyStateMessage();
-      if (emptyState) {
-        expect(emptyState).toContain('No titles');
-      } else {
-        // If no empty state, there should be no cards
-        const count = await mainViewPage.getTitleCardCount();
-        expect(count).toBe(0);
+      // Wait a bit more for the UI to update, but with a reasonable timeout
+      await authenticatedPage.waitForTimeout(2000);
+
+      // Check for empty state - look specifically in the titles container
+      const titleCount = await mainViewPage.getTitleCardCount();
+      
+      // If there are no cards, check for empty state message in titles container
+      if (titleCount === 0) {
+        const emptyStateInTitles = mainViewPage.titlesContainer.locator('text=No titles found').first();
+        try {
+          const isEmptyVisible = await emptyStateInTitles.isVisible({ timeout: 2000 });
+          if (isEmptyVisible) {
+            const emptyText = await emptyStateInTitles.textContent();
+            expect(emptyText?.toLowerCase()).toMatch(/no.*title/i);
+          }
+        } catch {
+          // Empty state message might not be visible, but count is 0 which is correct
+        }
       }
+      
+      // Verify there are no title cards
+      expect(titleCount).toBe(0);
     });
   });
 
