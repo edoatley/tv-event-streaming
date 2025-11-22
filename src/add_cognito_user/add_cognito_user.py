@@ -2,52 +2,14 @@ import boto3
 import json
 import secrets
 import string
-import urllib.request
-import urllib.error
-from botocore.exceptions import ClientError
-
-# cfnresponse replacement for Python 3.12 (not available in runtime)
-def send_response(event, context, response_status, response_data, physical_resource_id=None):
-    """Send a response to CloudFormation for a custom resource."""
-    response_url = event['ResponseURL']
-    
-    response_body = {
-        'Status': response_status,
-        'Reason': f'See the details in CloudWatch Log Stream: {context.log_stream_name}',
-        'PhysicalResourceId': physical_resource_id or context.log_stream_name,
-        'StackId': event['StackId'],
-        'RequestId': event['RequestId'],
-        'LogicalResourceId': event['LogicalResourceId'],
-        'Data': response_data
-    }
-    
-    json_response_body = json.dumps(response_body).encode('utf-8')
-    
-    try:
-        req = urllib.request.Request(
-            response_url,
-            data=json_response_body,
-            method='PUT',
-            headers={'Content-Type': ''}
-        )
-        with urllib.request.urlopen(req) as response:
-            print(f"CloudFormation response status: {response.status}")
-    except urllib.error.HTTPError as e:
-        print(f"Error sending response to CloudFormation: HTTP {e.code} - {e.reason}")
-        # Still raise to ensure CloudFormation knows something went wrong
-        raise
-    except Exception as e:
-        print(f"Error sending response to CloudFormation: {str(e)}")
-        raise
-
+import cfnresponse
+import traceback
 
 def generate_password():
     """Generate a random password that meets Cognito requirements"""
-    # Password requirements: min 8 chars, uppercase, lowercase, numbers
     length = 16
     alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
     password = ''.join(secrets.choice(alphabet) for _ in range(length))
-    # Ensure it has at least one of each required type
     if not any(c.isupper() for c in password):
         password = password[:-1] + secrets.choice(string.ascii_uppercase)
     if not any(c.islower() for c in password):
@@ -56,48 +18,57 @@ def generate_password():
         password = password[:-1] + secrets.choice(string.digits)
     return password
 
-
 def lambda_handler(event, context):
-    cognito_client = boto3.client('cognito-idp')
-    user_pool_id = event['ResourceProperties']['UserPoolId']
-    # Handle both list and string inputs
-    usernames_raw = event['ResourceProperties']['UserNames']
-    admin_usernames_raw = event['ResourceProperties'].get('AdminUserNames', [])
-    
-    # Convert to list if it's a string (comma-separated)
-    if isinstance(usernames_raw, str):
-        usernames = [u.strip() for u in usernames_raw.split(',') if u.strip()]
-    else:
-        usernames = usernames_raw if isinstance(usernames_raw, list) else [usernames_raw]
-    
-    if isinstance(admin_usernames_raw, str):
-        admin_usernames = [u.strip() for u in admin_usernames_raw.split(',') if u.strip()]
-    else:
-        admin_usernames = admin_usernames_raw if isinstance(admin_usernames_raw, list) else [admin_usernames_raw] if admin_usernames_raw else []
-    
-    request_type = event['RequestType']
-    
+    # Initialize response data
     response_data = {}
-    
+    # Get RequestType safely; default to '' if missing
+    request_type = event.get('RequestType', '')
+
     try:
+        # --- Move initialization INSIDE the try block ---
+        cognito_client = boto3.client('cognito-idp')
+        
+        # Safely get properties
+        props = event.get('ResourceProperties', {})
+        user_pool_id = props.get('UserPoolId')
+        
+        if not user_pool_id:
+            raise ValueError("UserPoolId missing from ResourceProperties")
+
+        # Handle both list and string inputs
+        usernames_raw = props.get('UserNames', [])
+        admin_usernames_raw = props.get('AdminUserNames', [])
+        
+        # Helper to parse comma-separated strings or lists
+        def parse_list(raw_input):
+            if isinstance(raw_input, str):
+                return [u.strip() for u in raw_input.split(',') if u.strip()]
+            elif isinstance(raw_input, list):
+                return raw_input
+            return [raw_input] if raw_input else []
+
+        usernames = parse_list(usernames_raw)
+        admin_usernames = parse_list(admin_usernames_raw)
+        
+        # --- Handle DELETE ---
         if request_type == 'Delete':
-            # Delete all users
             for username in usernames:
                 try:
                     cognito_client.admin_delete_user(
                         UserPoolId=user_pool_id,
                         Username=username
                     )
-                except ClientError as e:
-                    if e.response['Error']['Code'] != 'UserNotFoundException':
-                        raise
+                except cognito_client.exceptions.UserNotFoundException:
                     pass
-            send_response(event, context, 'SUCCESS', response_data)
+                except Exception as e:
+                    # Log error but continue so we don't fail the whole batch
+                    print(f"Warning: Failed to delete user {username}: {e}")
+            
+            cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
             return
         
-        # Create or update users
+        # --- Handle CREATE / UPDATE ---
         user_passwords = {}
-        
         for username in usernames:
             password = generate_password()
             user_passwords[username] = password
@@ -108,17 +79,15 @@ def lambda_handler(event, context):
                     UserPoolId=user_pool_id,
                     Username=username
                 )
-                # User exists, just update password
+                # User exists, update password
                 cognito_client.admin_set_user_password(
                     UserPoolId=user_pool_id,
                     Username=username,
                     Password=password,
                     Permanent=True
                 )
-            except ClientError as e:
-                if e.response['Error']['Code'] != 'UserNotFoundException':
-                    raise
-                # User doesn't exist, create it
+            except cognito_client.exceptions.UserNotFoundException:
+                # Create new user
                 cognito_client.admin_create_user(
                     UserPoolId=user_pool_id,
                     Username=username,
@@ -126,9 +95,8 @@ def lambda_handler(event, context):
                         {'Name': 'email', 'Value': username},
                         {'Name': 'email_verified', 'Value': 'true'}
                     ],
-                    MessageAction='SUPPRESS'  # Don't send welcome email
+                    MessageAction='SUPPRESS'
                 )
-                # Set the password
                 cognito_client.admin_set_user_password(
                     UserPoolId=user_pool_id,
                     Username=username,
@@ -136,7 +104,7 @@ def lambda_handler(event, context):
                     Permanent=True
                 )
             
-            # Add to admin group if specified
+            # Add to admin group if needed
             if username in admin_usernames:
                 try:
                     cognito_client.admin_add_user_to_group(
@@ -144,20 +112,21 @@ def lambda_handler(event, context):
                         Username=username,
                         GroupName='SecurityAdmins'
                     )
-                except ClientError as e:
-                    error_code = e.response['Error']['Code']
-                    if error_code in ['ResourceNotFoundException', 'InvalidParameterException']:
-                        # Group might not exist yet or user already in group, that's okay
-                        pass
-                    else:
-                        raise
+                except (cognito_client.exceptions.ResourceNotFoundException, 
+                        cognito_client.exceptions.InvalidParameterException):
+                    pass
         
         response_data['UserPasswords'] = json.dumps(user_passwords)
-        send_response(event, context, 'SUCCESS', response_data)
+        cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
         
     except Exception as e:
         print(f"Error: {str(e)}")
-        import traceback
         traceback.print_exc()
-        send_response(event, context, 'FAILED', response_data)
-
+        
+        # --- CRITICAL FIX: Return SUCCESS on DELETE failure ---
+        # This prevents the CloudFormation stack from getting stuck in DELETE_FAILED
+        if request_type == 'Delete':
+            print("Sending SUCCESS to CloudFormation to ensure clean stack deletion.")
+            cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
+        else:
+            cfnresponse.send(event, context, cfnresponse.FAILED, response_data)
