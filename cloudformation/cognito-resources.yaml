@@ -97,6 +97,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - cognito-idp:AdminCreateUser
+                  - cognito-idp:AdminGetUser
                   - cognito-idp:AdminSetUserPassword
                   - cognito-idp:AdminAddUserToGroup
                   - cognito-idp:AdminDeleteUser
