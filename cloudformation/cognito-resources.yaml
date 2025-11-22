@@ -10,11 +10,11 @@ Parameters:
     Type: String
     Description: The domain name of the CloudFront distribution for callback URLs.
   UserNames:
-    Type: CommaDelimitedList
+    Type: String
     Description: "Comma-separated list of usernames (email addresses) to create"
     Default: "test.user@example.com,edoatley@example.com,admin.user@example.com"
   AdminUserNames:
-    Type: CommaDelimitedList
+    Type: String
     Description: "Comma-separated list of usernames that should be added to the SecurityAdmins group"
     Default: "admin.user@example.com"
 
@@ -121,8 +121,8 @@ Resources:
     Properties:
       ServiceToken: !GetAtt UserCreationFunction.Arn
       UserPoolId: !Ref UserPreferencesUserPool
-      UserNames: !Join [",", !Ref UserNames]
-      AdminUserNames: !Join [",", !Ref AdminUserNames]
+      UserNames: !Ref UserNames
+      AdminUserNames: !Ref AdminUserNames
 
 Outputs:
   UserPoolId:
@@ -142,10 +142,10 @@ Outputs:
     Value: !GetAtt UserCreationResource.UserPasswords
   UserNames:
     Description: "List of created usernames"
-    Value: !Join [",", !Ref UserNames]
+    Value: !Ref UserNames
   AdminUserNames:
     Description: "List of admin usernames"
-    Value: !Join [",", !Ref AdminUserNames]
+    Value: !Ref AdminUserNames
   UserPoolClientId:
     Description: "The ID of the Cognito User Pool App Client for the web app"
     Value: !Ref UserPreferencesUserPoolClient
@@ -155,7 +155,7 @@ Outputs:
   # Backward compatibility outputs
   TestUsername:
     Description: "The username of the first test user (backward compatibility)"
-    Value: !Select [0, !Ref UserNames]
+    Value: !Select [0, !Split [",", !Ref UserNames]]
   AdminUsername:
     Description: "The username of the first admin user (backward compatibility)"
-    Value: !Select [0, !Ref AdminUserNames]
+    Value: !Select [0, !Split [",", !Ref AdminUserNames]]
