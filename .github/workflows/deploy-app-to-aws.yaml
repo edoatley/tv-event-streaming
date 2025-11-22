@@ -53,16 +53,20 @@ jobs:
             --parameter-overrides "CreateDataStream=true" "WatchModeApiKey=${WATCHMODE_API_KEY}"
 
       - name: Set passwords for Cognito users to known values for tests
-        if: ${{ secrets.TEST_USER_PASSWORD && secrets.ADMIN_USER_PASSWORD }}
         env:
           TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
           ADMIN_USER_PASSWORD: ${{ secrets.ADMIN_USER_PASSWORD }}
         run: |
-          bash ./github/scripts/set-cognito-passwords.sh \
-            ${TEST_USER_PASSWORD} \
-            ${ADMIN_USER_PASSWORD} \
-            ${STACK_NAME} \
-            ${REGION}
+          # Only run if both passwords are provided
+          if [ -n "$TEST_USER_PASSWORD" ] && [ -n "$ADMIN_USER_PASSWORD" ]; then
+            bash ./github/scripts/set-cognito-passwords.sh \
+              ${TEST_USER_PASSWORD} \
+              ${ADMIN_USER_PASSWORD} \
+              ${STACK_NAME} \
+              ${REGION}
+          else
+            echo "Skipping password setting - secrets not provided. Will use passwords from stack outputs."
+          fi
 
       - name: Update Website Contents
         run: bash ./github/scripts/update-website-contents.sh ${STACK_NAME} ${REGION}
