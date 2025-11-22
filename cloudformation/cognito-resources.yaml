@@ -18,6 +18,7 @@ Parameters:
     Description: "Comma-separated list of usernames that should be added to the SecurityAdmins group"
     Default: "admin.user@example.com"
 
+
 Resources:
   UserPreferencesUserPool:
     Type: AWS::Cognito::UserPool
@@ -116,6 +117,8 @@ Resources:
 
   # Custom resource to trigger user creation
   # Depends on SecurityAdminsGroup to ensure it exists before adding users
+  # Note: This resource is designed to be non-blocking - it will always return SUCCESS
+  # even if user creation fails, allowing the stack to proceed
   UserCreationResource:
     Type: AWS::CloudFormation::CustomResource
     DependsOn: SecurityAdminsGroup
@@ -124,6 +127,7 @@ Resources:
       UserPoolId: !Ref UserPreferencesUserPool
       UserNames: !Ref UserNames
       AdminUserNames: !Ref AdminUserNames
+    # DeletionPolicy: Retain  # Uncomment if you want to preserve users on stack deletion
 
 Outputs:
   UserPoolId:
@@ -139,8 +143,11 @@ Outputs:
       - Suffix: !Select [2, !Split ['/', !Ref 'AWS::StackId']]
         Region: !Ref AWS::Region
   UserPasswords:
-    Description: "JSON map of username to password for all created users"
+    Description: "JSON map of username to password for all created users. May be empty {} if user creation failed - check Warnings output for details."
     Value: !GetAtt UserCreationResource.UserPasswords
+  UserCreationWarnings:
+    Description: "JSON array of warning messages from user creation. Empty array [] if no warnings."
+    Value: !GetAtt UserCreationResource.Warnings
   UserNames:
     Description: "List of created usernames"
     Value: !Ref UserNames
