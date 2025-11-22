@@ -52,7 +52,8 @@ jobs:
             --no-confirm-changeset \
             --parameter-overrides "CreateDataStream=true" "WatchModeApiKey=${WATCHMODE_API_KEY}"
 
-      - name: Set passwords for Cognito users
+      - name: Set passwords for Cognito users to known values for tests
+        if: ${{ secrets.TEST_USER_PASSWORD && secrets.ADMIN_USER_PASSWORD }}
         env:
           TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
           ADMIN_USER_PASSWORD: ${{ secrets.ADMIN_USER_PASSWORD }}
@@ -93,9 +94,47 @@ jobs:
           # Fetch stack outputs to populate .env with URL and Client IDs
           ./scripts/fetch-stack-outputs.sh "$STACK_NAME" "$REGION" "default"
           
-          # Explicitly append passwords (not in stack outputs)
-          echo "TEST_USER_PASSWORD=$TEST_USER_PASSWORD" >> .env
-          echo "ADMIN_USER_PASSWORD=$ADMIN_USER_PASSWORD" >> .env
+          # Extract passwords from stack outputs if secrets are not provided
+          if [ -z "$TEST_USER_PASSWORD" ] || [ -z "$ADMIN_USER_PASSWORD" ]; then
+            echo "Secrets not provided, extracting passwords from stack outputs..."
+            
+            # Get UserPasswords output from stack
+            USER_PASSWORDS_JSON=$(aws cloudformation describe-stacks \
+              --stack-name "$STACK_NAME" \
+              --region "$REGION" \
+              --query "Stacks[0].Outputs[?OutputKey=='UserPasswords'].OutputValue" \
+              --output text)
+            
+            if [ -n "$USER_PASSWORDS_JSON" ] && [ "$USER_PASSWORDS_JSON" != "None" ]; then
+              # Get usernames from stack outputs
+              TEST_USERNAME=$(aws cloudformation describe-stacks \
+                --stack-name "$STACK_NAME" \
+                --region "$REGION" \
+                --query "Stacks[0].Outputs[?OutputKey=='TestUsername'].OutputValue" \
+                --output text)
+              ADMIN_USERNAME=$(aws cloudformation describe-stacks \
+                --stack-name "$STACK_NAME" \
+                --region "$REGION" \
+                --query "Stacks[0].Outputs[?OutputKey=='AdminUsername'].OutputValue" \
+                --output text)
+              
+              # Extract passwords from JSON using jq
+              if [ -z "$TEST_USER_PASSWORD" ] && [ -n "$TEST_USERNAME" ]; then
+                TEST_USER_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r ".[\"$TEST_USERNAME\"]")
+              fi
+              if [ -z "$ADMIN_USER_PASSWORD" ] && [ -n "$ADMIN_USERNAME" ]; then
+                ADMIN_USER_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r ".[\"$ADMIN_USERNAME\"]")
+              fi
+            fi
+          fi
+          
+          # Append passwords to .env (use secrets if provided, otherwise use extracted passwords)
+          if [ -n "$TEST_USER_PASSWORD" ]; then
+            echo "TEST_USER_PASSWORD=$TEST_USER_PASSWORD" >> .env
+          fi
+          if [ -n "$ADMIN_USER_PASSWORD" ]; then
+            echo "ADMIN_USER_PASSWORD=$ADMIN_USER_PASSWORD" >> .env
+          fi
 
       - name: Run UI Tests
         working-directory: ./tests/ui
