@@ -616,10 +616,18 @@ Add a new tab or panel to the admin screen
 ```text
 As a system admin
 I want to be able to list recent invocations of my lambda functions
-So that I can see what lambdas ran what the outcome was and some of the associated logs 
+So that I can see what lambdas ran, what the outcome was and some of the associated logs 
 ```
 
-the solution should achieve this in the simplest way possible. It could extend the existing admin Lambda or be a new one that takes the lambda function ARN as an input and fetches the relevant data from AWS
+- the solution should achieve this in the simplest way possible. 
+- rather extend the existing admin Lambda, a new lambda function that takes the ARN as an input and fetches the relevant data from AWS would be better
+- the view should be a new tab in the admin screen
+- the key data to display:
+  - lambda arn - ideally with direct link to the lambda in AWS
+  - number of invocations in the last hour 
+  - number of successful invocations in last hour
+  - logs from most recent invocation
+
 
 ## Step 19 - schedule the API calls to get the shows and make it efficient
 

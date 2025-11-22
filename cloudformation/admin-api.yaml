@@ -21,6 +21,12 @@ Parameters:
   TitleEnrichmentFunctionArn:
     Type: String
     Description: "ARN of the Title Enrichment function to invoke."
+  UserPreferencesFunctionArn:
+    Type: String
+    Description: "ARN of the User Preferences function."
+  WebApiFunctionArn:
+    Type: String
+    Description: "ARN of the Web API function."
   UserPoolArn:
     Type: String
     Description: "ARN of the Cognito User Pool for authorization."
@@ -59,7 +65,6 @@ Resources:
     Properties:
       Handler: index.handler
       Runtime: python3.12
-      # This function's only job is to return the correct CORS headers for preflight OPTIONS requests.
       InlineCode: |
         import json
         def handler(event, context):
@@ -127,6 +132,21 @@ Resources:
                   - !Ref PeriodicReferenceFunctionArn
                   - !Ref UserPrefsTitleIngestionFunctionArn
                   - !Ref TitleEnrichmentFunctionArn
+        - PolicyName: AdminLambdaObservabilityAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:GetMetricData
+                  - lambda:GetFunctionConfiguration
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                  - logs:GetLogEvents
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*"
 
   AdminLambdaFunction:
     Type: AWS::Serverless::Function
@@ -135,7 +155,7 @@ Resources:
       CodeUri: ../src/admin_lambda/
       Handler: admin_lambda.lambda_handler
       Runtime: python3.11
-      MemorySize: 128
+      MemorySize: 256
       Timeout: 30
       Role: !GetAtt AdminLambdaExecutionRole.Arn
       Environment:
@@ -145,6 +165,8 @@ Resources:
           REFERENCE_DATA_LAMBDA_ARN: !Ref PeriodicReferenceFunctionArn
           TITLE_DATA_REFRESH_LAMBDA_ARN: !Ref UserPrefsTitleIngestionFunctionArn
           TITLE_ENRICHMENT_LAMBDA_ARN: !Ref TitleEnrichmentFunctionArn
+          USER_PREFS_LAMBDA_ARN: !Ref UserPreferencesFunctionArn
+          WEB_API_LAMBDA_ARN: !Ref WebApiFunctionArn
       Events:
         AdminApiGetSummary:
           Type: Api
@@ -175,6 +197,22 @@ Resources:
           Properties:
             RestApiId: !Ref AdminApi
             Path: /admin/titles/enrich
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminApiGetLambdas:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/system/lambdas
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+        AdminApiPostLambdaLogs:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/system/lambdas/logs
             Method: post
             Auth:
               Authorizer: CognitoAuthorizer

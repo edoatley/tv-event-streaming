@@ -129,19 +129,6 @@ Resources:
         UserNames: !Sub "${TestUserName},${AdminUserName}"
         AdminUserNames: !Ref AdminUserName
 
-  AdminApiApp:
-    Type: AWS::Serverless::Application
-    Properties:
-      Location: admin-api.yaml
-      Parameters:
-        RootStackName: !Ref AWS::StackName
-        ProgrammesTableName: !Ref ProgrammesTable
-        ProgrammesTableArn: !GetAtt ProgrammesTable.Arn
-        PeriodicReferenceFunctionArn: !GetAtt PeriodicReferenceApp.Outputs.PeriodicReferenceFunctionArn
-        UserPrefsTitleIngestionFunctionArn: !GetAtt UserPrefsTitleIngestionApp.Outputs.UserPrefsTitleIngestionFunctionArn
-        TitleEnrichmentFunctionArn: !GetAtt TitleEnrichmentApp.Outputs.TitleEnrichmentFunctionArn
-        UserPoolArn: !GetAtt CognitoApp.Outputs.UserPoolArn
-
   PeriodicReferenceApp:
     Type: AWS::Serverless::Application
     Properties:
@@ -200,6 +187,22 @@ Resources:
       Parameters:
         ProgramDataTableName: !Ref ProgrammesTable
         ProgramDataTableArn: !GetAtt ProgrammesTable.Arn
+        UserPoolArn: !GetAtt CognitoApp.Outputs.UserPoolArn
+
+  # Moved AdminApiApp to the end to ensure all other apps are available for parameter referencing
+  AdminApiApp:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: admin-api.yaml
+      Parameters:
+        RootStackName: !Ref AWS::StackName
+        ProgrammesTableName: !Ref ProgrammesTable
+        ProgrammesTableArn: !GetAtt ProgrammesTable.Arn
+        PeriodicReferenceFunctionArn: !GetAtt PeriodicReferenceApp.Outputs.PeriodicReferenceFunctionName
+        UserPrefsTitleIngestionFunctionArn: !GetAtt UserPrefsTitleIngestionApp.Outputs.UserPrefsTitleIngestionFunctionName
+        TitleEnrichmentFunctionArn: !GetAtt TitleEnrichmentApp.Outputs.TitleEnrichmentFunctionName
+        UserPreferencesFunctionArn: !GetAtt UserPreferencesApp.Outputs.UserPreferencesFunctionName
+        WebApiFunctionArn: !GetAtt WebApiApp.Outputs.WebApiFunctionName
         UserPoolArn: !GetAtt CognitoApp.Outputs.UserPoolArn
 
 Outputs:
