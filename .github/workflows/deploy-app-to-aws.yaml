@@ -129,8 +129,26 @@ jobs:
       - name: Clear Cloudfront cache
         run: bash ./github/scripts/clear-cloudfront-cache.sh ${STACK_NAME} ${REGION}
 
-      # --- UI Testing Steps ---
-      
+  ui-tests:
+    runs-on: ubuntu-latest
+    needs: deploy
+    # Require token generation access to authenticate with AWS OIDC
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      STACK_NAME: ${{ env.STACK_NAME }}
+      REGION: ${{ env.REGION }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
