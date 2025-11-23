@@ -105,6 +105,8 @@ Resources:
                 Resource: !GetAtt UserPreferencesUserPool.Arn
 
   # Lambda function to create users with random passwords
+  # Reduced timeout to 60s to fail fast and prevent CloudFormation from hanging
+  # The function will send a response before timeout to prevent stack hangs
   UserCreationFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -113,7 +115,7 @@ Resources:
       Handler: add_cognito_user.lambda_handler
       Runtime: python3.12
       Role: !GetAtt UserCreationLambdaRole.Arn
-      Timeout: 300
+      Timeout: 60
 
   # Custom resource to trigger user creation
   # Depends on SecurityAdminsGroup to ensure it exists before adding users

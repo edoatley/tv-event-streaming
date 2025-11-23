@@ -2,8 +2,9 @@ import boto3
 import json
 import secrets
 import string
-import cfnresponse
 import traceback
+import urllib.request
+import urllib.error
 
 def generate_password():
     """Generate a random password that meets Cognito requirements"""
@@ -18,17 +19,74 @@ def generate_password():
         password = password[:-1] + secrets.choice(string.digits)
     return password
 
+def send_cfn_response(event, context, status, response_data=None):
+    """
+    Send a response to CloudFormation custom resource.
+    This is a custom implementation that properly handles bytes encoding for Python 3.12.
+    """
+    if response_data is None:
+        response_data = {}
+    
+    response_body = json.dumps({
+        'Status': status,
+        'Reason': f'See CloudWatch Log Stream: {context.log_stream_name}',
+        'PhysicalResourceId': event.get('PhysicalResourceId', context.log_stream_name),
+        'StackId': event['StackId'],
+        'RequestId': event['RequestId'],
+        'LogicalResourceId': event['LogicalResourceId'],
+        'Data': response_data
+    })
+    
+    response_url = event['ResponseURL']
+    print(f"[DEBUG] Sending response to: {response_url}")
+    print(f"[DEBUG] Response status: {status}")
+    print(f"[DEBUG] Response data: {response_data}")
+    
+    try:
+        # Encode the response body as bytes for Python 3.12 compatibility
+        response_body_bytes = response_body.encode('utf-8')
+        req = urllib.request.Request(response_url, data=response_body_bytes, method='PUT')
+        req.add_header('Content-Type', '')
+        req.add_header('Content-Length', str(len(response_body_bytes)))
+        
+        with urllib.request.urlopen(req) as response:
+            print(f"[DEBUG] Response sent successfully. Status code: {response.getcode()}")
+            return True
+    except urllib.error.HTTPError as e:
+        print(f"[ERROR] HTTP error sending response: {e.code} - {e.reason}")
+        print(f"[ERROR] Response body: {e.read().decode('utf-8')}")
+        return False
+    except Exception as e:
+        print(f"[ERROR] Error sending response: {str(e)}")
+        traceback.print_exc()
+        return False
+
 def lambda_handler(event, context):
     # Initialize response data
     response_data = {}
     warnings = []
+    response_sent = False
     
     # Get RequestType safely; default to '' if missing
     request_type = event.get('RequestType', '')
     
+    # Calculate timeout threshold - send response 15 seconds before Lambda timeout
+    initial_timeout = context.get_remaining_time_in_millis() / 1000
+    timeout_threshold = 15  # seconds before timeout to send emergency response
+    
     print(f"[DEBUG] Lambda invoked with RequestType: {request_type}")
+    print(f"[DEBUG] Initial remaining time: {initial_timeout:.2f} seconds")
+    print(f"[DEBUG] Will send emergency response if less than {timeout_threshold}s remaining")
     print(f"[DEBUG] Event keys: {list(event.keys())}")
     print(f"[DEBUG] Full event: {json.dumps(event, default=str)}")
+
+    def check_timeout():
+        """Check if we're approaching timeout and need to send response early"""
+        remaining = context.get_remaining_time_in_millis() / 1000
+        if remaining < timeout_threshold:
+            print(f"[WARNING] Approaching timeout! Only {remaining:.2f}s remaining. Sending response now.")
+            return True
+        return False
 
     try:
         # --- Initialize Cognito client ---
@@ -47,7 +105,7 @@ def lambda_handler(event, context):
             warnings.append(error_msg)
             # Still return SUCCESS to allow stack to proceed
             response_data['Warnings'] = json.dumps(warnings)
-            cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
+            send_cfn_response(event, context, 'SUCCESS', response_data)
             return
 
         print(f"[DEBUG] UserPoolId: {user_pool_id}")
@@ -77,6 +135,16 @@ def lambda_handler(event, context):
         if request_type == 'Delete':
             print("[DEBUG] Processing DELETE request")
             for username in usernames:
+                if check_timeout():
+                    # Send response early to prevent timeout
+                    if warnings:
+                        response_data['Warnings'] = json.dumps(warnings)
+                    response_data['TimeoutWarning'] = "true"
+                    response_data['Incomplete'] = "true"
+                    send_cfn_response(event, context, 'SUCCESS', response_data)
+                    response_sent = True
+                    return
+                
                 print(f"[DEBUG] Attempting to delete user: {username}")
                 try:
                     cognito_client.admin_delete_user(
@@ -95,7 +163,8 @@ def lambda_handler(event, context):
             if warnings:
                 response_data['Warnings'] = json.dumps(warnings)
             print("[DEBUG] Sending SUCCESS response for DELETE")
-            cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
+            send_cfn_response(event, context, 'SUCCESS', response_data)
+            response_sent = True
             return
         
         # --- Handle CREATE / UPDATE ---
@@ -105,6 +174,20 @@ def lambda_handler(event, context):
         failed_users = []
         
         for username in usernames:
+            # Check timeout before processing each user
+            if check_timeout():
+                # Send response early to prevent timeout
+                if user_passwords:
+                    response_data['UserPasswords'] = json.dumps(user_passwords)
+                else:
+                    response_data['UserPasswords'] = json.dumps({})
+                response_data['Warnings'] = json.dumps(warnings + ["Operation incomplete due to timeout"])
+                response_data['TimeoutWarning'] = "true"
+                response_data['Incomplete'] = "true"
+                send_cfn_response(event, context, 'SUCCESS', response_data)
+                response_sent = True
+                return
+            
             print(f"[DEBUG] Processing user: {username}")
             try:
                 password = generate_password()
@@ -208,7 +291,8 @@ def lambda_handler(event, context):
         
         # Always return SUCCESS to allow stack to proceed, even if some users failed
         print("[DEBUG] Sending SUCCESS response (stack will proceed despite any user creation failures)")
-        cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
+        send_cfn_response(event, context, 'SUCCESS', response_data)
+        response_sent = True
         
     except Exception as e:
         error_msg = f"Critical error in Lambda handler: {str(e)}"
@@ -228,9 +312,22 @@ def lambda_handler(event, context):
         print("[WARNING] Returning SUCCESS despite error to allow stack deployment to proceed")
         print("[WARNING] Check CloudWatch logs and Warnings output for details")
         
-        try:
-            cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
-        except Exception as send_error:
-            # If even sending the response fails, log it but don't raise
-            print(f"[CRITICAL] Failed to send CloudFormation response: {str(send_error)}")
-            traceback.print_exc()
+        # Try to send response - if it fails, we've already logged the error
+        send_cfn_response(event, context, 'SUCCESS', response_data)
+        response_sent = True
+    finally:
+        # Ensure response is always sent, even if something goes wrong
+        if not response_sent:
+            print("[CRITICAL] Response not sent in normal flow! Sending emergency response in finally block")
+            try:
+                emergency_response = response_data.copy()
+                if 'UserPasswords' not in emergency_response:
+                    emergency_response['UserPasswords'] = json.dumps({})
+                if 'Warnings' not in emergency_response:
+                    emergency_response['Warnings'] = json.dumps(["Lambda handler exited without sending response"])
+                emergency_response['EmergencyResponse'] = "true"
+                send_cfn_response(event, context, 'SUCCESS', emergency_response)
+                response_sent = True
+            except Exception as final_error:
+                print(f"[CRITICAL] Failed to send emergency response: {str(final_error)}")
+                traceback.print_exc()
