@@ -245,6 +245,12 @@ Outputs:
   UserPoolId:
     Description: "The ID of the Cognito User Pool"
     Value: !GetAtt CognitoApp.Outputs.UserPoolId
+  UserNames:
+    Description: "Comma-separated list of usernames"
+    Value: !Sub "${TestUserName},${AdminUserName}"
+  AdminUserNames:
+    Description: "Comma-separated list of admin usernames"
+    Value: !Ref AdminUserName
   WebApiEndpoint:
     Description: "The Web API endpoint URL"
     Value: !GetAtt WebApiApp.Outputs.ApiEndpoint

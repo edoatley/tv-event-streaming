@@ -40,6 +40,26 @@ jobs:
       - name: Check for failed deploy
         run: bash ./github/scripts/recover-failed-stack.sh
 
+      - name: Read User Configuration
+        id: users
+        run: |
+          # Read user configuration from config/users.json
+          USER_NAMES=$(jq -r '.users[].email' config/users.json | tr '\n' ',' | sed 's/,$//')
+          ADMIN_USER_NAMES=$(jq -r '.users[] | select(.type == "admin") | .email' config/users.json | tr '\n' ',' | sed 's/,$//')
+          TEST_USERNAME=$(jq -r '.users[] | select(.type == "standard") | .email' config/users.json | head -1)
+          ADMIN_USERNAME=$(jq -r '.users[] | select(.type == "admin") | .email' config/users.json | head -1)
+          
+          echo "user_names=$USER_NAMES" >> $GITHUB_OUTPUT
+          echo "admin_user_names=${ADMIN_USER_NAMES:-}" >> $GITHUB_OUTPUT
+          echo "test_username=$TEST_USERNAME" >> $GITHUB_OUTPUT
+          echo "admin_username=$ADMIN_USERNAME" >> $GITHUB_OUTPUT
+          
+          echo "Configured users:"
+          echo "  All users: $USER_NAMES"
+          echo "  Admin users: ${ADMIN_USER_NAMES:-none}"
+          echo "  Test user: $TEST_USERNAME"
+          echo "  Admin user: $ADMIN_USERNAME"
+
       - name: Deploy
         env:
           WATCHMODE_API_KEY: ${{ secrets.WATCHMODE_API_KEY }}
@@ -50,23 +70,32 @@ jobs:
             --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
             --no-fail-on-empty-changeset \
             --no-confirm-changeset \
-            --parameter-overrides "CreateDataStream=true" "WatchModeApiKey=${WATCHMODE_API_KEY}"
+            --parameter-overrides \
+              "CreateDataStream=true" \
+              "WatchModeApiKey=${WATCHMODE_API_KEY}" \
+              "TestUserName=${{ steps.users.outputs.test_username }}" \
+              "AdminUserName=${{ steps.users.outputs.admin_username }}"
 
       - name: Create Cognito Users
         run: |
-          # Fetch stack outputs to get required parameters
-          STACK_OUTPUTS=$(aws cloudformation describe-stacks \
+          # Fetch UserPoolId from stack outputs
+          USER_POOL_ID=$(aws cloudformation describe-stacks \
             --stack-name "$STACK_NAME" \
             --region "$REGION" \
-            --query "Stacks[0].Outputs" \
-            --output json)
+            --query "Stacks[0].Outputs[?OutputKey=='UserPoolId'].OutputValue" \
+            --output text)
           
-          USER_POOL_ID=$(echo "$STACK_OUTPUTS" | jq -r '.[] | select(.OutputKey=="UserPoolId") | .OutputValue')
-          USER_NAMES=$(echo "$STACK_OUTPUTS" | jq -r '.[] | select(.OutputKey=="UserNames") | .OutputValue')
-          ADMIN_USER_NAMES=$(echo "$STACK_OUTPUTS" | jq -r '.[] | select(.OutputKey=="AdminUserNames") | .OutputValue')
+          if [ -z "$USER_POOL_ID" ] || [ "$USER_POOL_ID" == "None" ]; then
+            echo "Error: Could not retrieve UserPoolId from stack outputs"
+            exit 1
+          fi
           
-          if [ -z "$USER_POOL_ID" ] || [ -z "$USER_NAMES" ]; then
-            echo "Error: Could not retrieve required stack outputs (UserPoolId or UserNames)"
+          # Get usernames from config file
+          USER_NAMES="${{ steps.users.outputs.user_names }}"
+          ADMIN_USER_NAMES="${{ steps.users.outputs.admin_user_names }}"
+          
+          if [ -z "$USER_NAMES" ]; then
+            echo "Error: Could not retrieve user names from configuration"
             exit 1
           fi
           

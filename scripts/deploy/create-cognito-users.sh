@@ -11,14 +11,30 @@ ADMIN_USER_NAMES="$3"
 STACK_NAME="${4:-tv-event-streaming-gha}"
 REGION="${5:-eu-west-2}"
 
+# --- Try to read from config file if parameters not provided ---
+CONFIG_FILE="config/users.json"
+if [ -z "$USER_NAMES" ] && [ -f "$CONFIG_FILE" ]; then
+    echo "Reading user configuration from $CONFIG_FILE..."
+    USER_NAMES=$(jq -r '.users[].email' "$CONFIG_FILE" | tr '\n' ',' | sed 's/,$//')
+    if [ -z "$ADMIN_USER_NAMES" ]; then
+        ADMIN_USER_NAMES=$(jq -r '.users[] | select(.type == "admin") | .email' "$CONFIG_FILE" | tr '\n' ',' | sed 's/,$//')
+    fi
+    echo "  Loaded users: $USER_NAMES"
+    if [ -n "$ADMIN_USER_NAMES" ]; then
+        echo "  Admin users: $ADMIN_USER_NAMES"
+    fi
+fi
+
 # --- Validation ---
 if [ -z "$USER_POOL_ID" ] || [ -z "$USER_NAMES" ]; then
-    echo "Error: Usage: $0 <UserPoolId> <UserNames> <AdminUserNames> <StackName> [Region]"
-    echo "  UserPoolId: The Cognito User Pool ID"
-    echo "  UserNames: Comma-separated list of usernames (email addresses)"
-    echo "  AdminUserNames: Comma-separated list of admin usernames"
+    echo "Error: Usage: $0 <UserPoolId> [UserNames] [AdminUserNames] <StackName> [Region]"
+    echo "  UserPoolId: The Cognito User Pool ID (required)"
+    echo "  UserNames: Comma-separated list of usernames (optional if config/users.json exists)"
+    echo "  AdminUserNames: Comma-separated list of admin usernames (optional if config/users.json exists)"
     echo "  StackName: CloudFormation stack name (default: tv-event-streaming-gha)"
     echo "  Region: AWS region (default: eu-west-2)"
+    echo ""
+    echo "If UserNames is not provided, the script will attempt to read from config/users.json"
     exit 1
 fi
 
