@@ -18,11 +18,18 @@ echo "Fetching outputs from CloudFormation stack: ${STACK_NAME}..."
 echo "Region: ${REGION}"
 echo "Profile: ${PROFILE}"
 
+# Build AWS CLI profile argument - only use profile if not in CI (GitHub Actions sets CI=true)
+# and profile is not "default"
+AWS_PROFILE_ARG=""
+if [ -z "${CI:-}" ] && [ "${PROFILE}" != "default" ] && [ -n "${PROFILE}" ]; then
+  AWS_PROFILE_ARG="--profile ${PROFILE}"
+fi
+
 # Fetch all outputs
 STACK_OUTPUTS=$(aws cloudformation describe-stacks \
   --stack-name "${STACK_NAME}" \
   --query "Stacks[0].Outputs" \
-  --profile "${PROFILE}" \
+  ${AWS_PROFILE_ARG} \
   --region "${REGION}" \
   2>/dev/null)
 
@@ -143,11 +150,11 @@ if [ "$TEST_PASSWORD_EXISTS" = "no" ] || [ "$ADMIN_PASSWORD_EXISTS" = "no" ]; th
   
   if [ "$TEST_PASSWORD_EXISTS" = "no" ] || [ "$ADMIN_PASSWORD_EXISTS" = "no" ]; then
     SECRET_NAME="${STACK_NAME}/UserPasswords"
-    if aws secretsmanager describe-secret --secret-id "$SECRET_NAME" --profile "${PROFILE}" --region "${REGION}" >/dev/null 2>&1; then
+    if aws secretsmanager describe-secret --secret-id "$SECRET_NAME" ${AWS_PROFILE_ARG} --region "${REGION}" >/dev/null 2>&1; then
       echo "  Fetching passwords from Secrets Manager: $SECRET_NAME"
       SECRET_PASSWORDS_JSON=$(aws secretsmanager get-secret-value \
         --secret-id "$SECRET_NAME" \
-        --profile "${PROFILE}" \
+        ${AWS_PROFILE_ARG} \
         --region "${REGION}" \
         --query "SecretString" \
         --output text 2>/dev/null || echo "")
