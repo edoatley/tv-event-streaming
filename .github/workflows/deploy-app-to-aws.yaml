@@ -137,8 +137,8 @@ jobs:
       id-token: write
       contents: read
     env:
-      STACK_NAME: ${{ env.STACK_NAME }}
-      REGION: ${{ env.REGION }}
+      STACK_NAME: tv-event-streaming-gha
+      REGION: eu-west-2
     steps:
       - uses: actions/checkout@v5
         with:
