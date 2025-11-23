@@ -230,9 +230,9 @@ Outputs:
   TestUsername:
     Description: "The username of the pre-created test user"
     Value: !GetAtt CognitoApp.Outputs.TestUsername
-  UserPasswords:
-    Description: "JSON map of username to password for all created users"
-    Value: !GetAtt CognitoApp.Outputs.UserPasswords
+  UserCreationFunctionName:
+    Description: "The name of the Lambda function for creating Cognito users"
+    Value: !GetAtt CognitoApp.Outputs.UserCreationFunctionName
   UserPreferencesApiEndpoint:
     Description: "The User Preferences API endpoint URL"
     Value: !GetAtt UserPreferencesApp.Outputs.ApiEndpoint

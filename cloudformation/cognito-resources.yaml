@@ -105,8 +105,7 @@ Resources:
                 Resource: !GetAtt UserPreferencesUserPool.Arn
 
   # Lambda function to create users with random passwords
-  # Reduced timeout to 60s to fail fast and prevent CloudFormation from hanging
-  # The function will send a response before timeout to prevent stack hangs
+  # This function can be invoked directly via AWS CLI or SDK
   UserCreationFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -116,20 +115,6 @@ Resources:
       Runtime: python3.12
       Role: !GetAtt UserCreationLambdaRole.Arn
       Timeout: 60
-
-  # Custom resource to trigger user creation
-  # Depends on SecurityAdminsGroup to ensure it exists before adding users
-  # Note: This resource is designed to be non-blocking - it will always return SUCCESS
-  # even if user creation fails, allowing the stack to proceed
-  UserCreationResource:
-    Type: AWS::CloudFormation::CustomResource
-    DependsOn: SecurityAdminsGroup
-    Properties:
-      ServiceToken: !GetAtt UserCreationFunction.Arn
-      UserPoolId: !Ref UserPreferencesUserPool
-      UserNames: !Ref UserNames
-      AdminUserNames: !Ref AdminUserNames
-    # DeletionPolicy: Retain  # Uncomment if you want to preserve users on stack deletion
 
 Outputs:
   UserPoolId:
@@ -144,12 +129,9 @@ Outputs:
       - 'uktv-guide-${Suffix}.auth.${Region}.amazoncognito.com'
       - Suffix: !Select [2, !Split ['/', !Ref 'AWS::StackId']]
         Region: !Ref AWS::Region
-  UserPasswords:
-    Description: "JSON map of username to password for all created users. May be empty {} if user creation failed - check Warnings output for details."
-    Value: !GetAtt UserCreationResource.UserPasswords
-  UserCreationWarnings:
-    Description: "JSON array of warning messages from user creation. Empty array [] if no warnings."
-    Value: !GetAtt UserCreationResource.Warnings
+  UserCreationFunctionName:
+    Description: "The name of the Lambda function for creating Cognito users"
+    Value: !Ref UserCreationFunction
   UserNames:
     Description: "List of created usernames"
     Value: !Ref UserNames

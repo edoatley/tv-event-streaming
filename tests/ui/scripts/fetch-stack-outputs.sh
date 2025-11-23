@@ -111,26 +111,64 @@ update_env_var() {
 [ -n "$REGION" ] && update_env_var "AWS_REGION" "$REGION"
 [ -n "$PROFILE" ] && update_env_var "AWS_PROFILE" "$PROFILE"
 
-# Extract passwords from UserPasswords output if available and not already set in .env
-if [ -n "$USER_PASSWORDS_JSON" ] && [ "$USER_PASSWORDS_JSON" != "null" ] && [ "$USER_PASSWORDS_JSON" != "None" ]; then
-  # Check if passwords are already set in .env
-  TEST_PASSWORD_EXISTS=$(grep -q "^TEST_USER_PASSWORD=" "${ENV_PATH}" 2>/dev/null && echo "yes" || echo "no")
-  ADMIN_PASSWORD_EXISTS=$(grep -q "^ADMIN_USER_PASSWORD=" "${ENV_PATH}" 2>/dev/null && echo "yes" || echo "no")
-  
-  # Extract passwords from JSON if not already set
-  if [ "$TEST_PASSWORD_EXISTS" = "no" ] && [ -n "$TEST_USERNAME" ]; then
-    TEST_USER_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r ".[\"$TEST_USERNAME\"]" 2>/dev/null || echo "")
-    if [ -n "$TEST_USER_PASSWORD" ] && [ "$TEST_USER_PASSWORD" != "null" ]; then
-      update_env_var "TEST_USER_PASSWORD" "$TEST_USER_PASSWORD"
-      echo "  Extracted TEST_USER_PASSWORD from stack outputs"
+# Extract passwords - try stack outputs first, then Secrets Manager
+# Check if passwords are already set in .env
+TEST_PASSWORD_EXISTS=$(grep -q "^TEST_USER_PASSWORD=" "${ENV_PATH}" 2>/dev/null && echo "yes" || echo "no")
+ADMIN_PASSWORD_EXISTS=$(grep -q "^ADMIN_USER_PASSWORD=" "${ENV_PATH}" 2>/dev/null && echo "yes" || echo "no")
+
+# Try to get passwords from stack outputs (for backward compatibility)
+if [ "$TEST_PASSWORD_EXISTS" = "no" ] || [ "$ADMIN_PASSWORD_EXISTS" = "no" ]; then
+  if [ -n "$USER_PASSWORDS_JSON" ] && [ "$USER_PASSWORDS_JSON" != "null" ] && [ "$USER_PASSWORDS_JSON" != "None" ]; then
+    # Extract passwords from stack outputs
+    if [ "$TEST_PASSWORD_EXISTS" = "no" ] && [ -n "$TEST_USERNAME" ]; then
+      TEST_USER_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r ".[\"$TEST_USERNAME\"]" 2>/dev/null || echo "")
+      if [ -n "$TEST_USER_PASSWORD" ] && [ "$TEST_USER_PASSWORD" != "null" ]; then
+        update_env_var "TEST_USER_PASSWORD" "$TEST_USER_PASSWORD"
+        echo "  Extracted TEST_USER_PASSWORD from stack outputs"
+      fi
+    fi
+    
+    if [ "$ADMIN_PASSWORD_EXISTS" = "no" ] && [ -n "$ADMIN_USERNAME" ]; then
+      ADMIN_USER_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r ".[\"$ADMIN_USERNAME\"]" 2>/dev/null || echo "")
+      if [ -n "$ADMIN_USER_PASSWORD" ] && [ "$ADMIN_USER_PASSWORD" != "null" ]; then
+        update_env_var "ADMIN_USER_PASSWORD" "$ADMIN_USER_PASSWORD"
+        echo "  Extracted ADMIN_USER_PASSWORD from stack outputs"
+      fi
     fi
   fi
   
-  if [ "$ADMIN_PASSWORD_EXISTS" = "no" ] && [ -n "$ADMIN_USERNAME" ]; then
-    ADMIN_USER_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r ".[\"$ADMIN_USERNAME\"]" 2>/dev/null || echo "")
-    if [ -n "$ADMIN_USER_PASSWORD" ] && [ "$ADMIN_USER_PASSWORD" != "null" ]; then
-      update_env_var "ADMIN_USER_PASSWORD" "$ADMIN_USER_PASSWORD"
-      echo "  Extracted ADMIN_USER_PASSWORD from stack outputs"
+  # If still missing, try Secrets Manager
+  TEST_PASSWORD_EXISTS=$(grep -q "^TEST_USER_PASSWORD=" "${ENV_PATH}" 2>/dev/null && echo "yes" || echo "no")
+  ADMIN_PASSWORD_EXISTS=$(grep -q "^ADMIN_USER_PASSWORD=" "${ENV_PATH}" 2>/dev/null && echo "yes" || echo "no")
+  
+  if [ "$TEST_PASSWORD_EXISTS" = "no" ] || [ "$ADMIN_PASSWORD_EXISTS" = "no" ]; then
+    SECRET_NAME="${STACK_NAME}/UserPasswords"
+    if aws secretsmanager describe-secret --secret-id "$SECRET_NAME" --profile "${PROFILE}" --region "${REGION}" >/dev/null 2>&1; then
+      echo "  Fetching passwords from Secrets Manager: $SECRET_NAME"
+      SECRET_PASSWORDS_JSON=$(aws secretsmanager get-secret-value \
+        --secret-id "$SECRET_NAME" \
+        --profile "${PROFILE}" \
+        --region "${REGION}" \
+        --query "SecretString" \
+        --output text 2>/dev/null || echo "")
+      
+      if [ -n "$SECRET_PASSWORDS_JSON" ] && [ "$SECRET_PASSWORDS_JSON" != "null" ] && [ "$SECRET_PASSWORDS_JSON" != "None" ]; then
+        if [ "$TEST_PASSWORD_EXISTS" = "no" ] && [ -n "$TEST_USERNAME" ]; then
+          TEST_USER_PASSWORD=$(echo "$SECRET_PASSWORDS_JSON" | jq -r ".[\"$TEST_USERNAME\"]" 2>/dev/null || echo "")
+          if [ -n "$TEST_USER_PASSWORD" ] && [ "$TEST_USER_PASSWORD" != "null" ]; then
+            update_env_var "TEST_USER_PASSWORD" "$TEST_USER_PASSWORD"
+            echo "  Extracted TEST_USER_PASSWORD from Secrets Manager"
+          fi
+        fi
+        
+        if [ "$ADMIN_PASSWORD_EXISTS" = "no" ] && [ -n "$ADMIN_USERNAME" ]; then
+          ADMIN_USER_PASSWORD=$(echo "$SECRET_PASSWORDS_JSON" | jq -r ".[\"$ADMIN_USERNAME\"]" 2>/dev/null || echo "")
+          if [ -n "$ADMIN_USER_PASSWORD" ] && [ "$ADMIN_USER_PASSWORD" != "null" ]; then
+            update_env_var "ADMIN_USER_PASSWORD" "$ADMIN_USER_PASSWORD"
+            echo "  Extracted ADMIN_USER_PASSWORD from Secrets Manager"
+          fi
+        fi
+      fi
     fi
   fi
 fi
@@ -143,6 +181,6 @@ ADMIN_PASSWORD_SET=$(grep -q "^ADMIN_USER_PASSWORD=.*[^=]$" "${ENV_PATH}" 2>/dev
 
 if [ "$TEST_PASSWORD_SET" = "no" ] || [ "$ADMIN_PASSWORD_SET" = "no" ]; then
   echo "Note: TEST_USER_PASSWORD and/or ADMIN_USER_PASSWORD may need to be set manually."
-  echo "If UserPasswords output is available in the stack, passwords were extracted automatically."
+  echo "Passwords were attempted to be extracted from stack outputs or Secrets Manager."
 fi
 

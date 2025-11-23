@@ -52,6 +52,32 @@ jobs:
             --no-confirm-changeset \
             --parameter-overrides "CreateDataStream=true" "WatchModeApiKey=${WATCHMODE_API_KEY}"
 
+      - name: Create Cognito Users
+        run: |
+          # Fetch stack outputs to get required parameters
+          STACK_OUTPUTS=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --region "$REGION" \
+            --query "Stacks[0].Outputs" \
+            --output json)
+          
+          USER_POOL_ID=$(echo "$STACK_OUTPUTS" | jq -r '.[] | select(.OutputKey=="UserPoolId") | .OutputValue')
+          USER_NAMES=$(echo "$STACK_OUTPUTS" | jq -r '.[] | select(.OutputKey=="UserNames") | .OutputValue')
+          ADMIN_USER_NAMES=$(echo "$STACK_OUTPUTS" | jq -r '.[] | select(.OutputKey=="AdminUserNames") | .OutputValue')
+          
+          if [ -z "$USER_POOL_ID" ] || [ -z "$USER_NAMES" ]; then
+            echo "Error: Could not retrieve required stack outputs (UserPoolId or UserNames)"
+            exit 1
+          fi
+          
+          # Invoke user creation script
+          bash ./scripts/deploy/create-cognito-users.sh \
+            "$USER_POOL_ID" \
+            "$USER_NAMES" \
+            "${ADMIN_USER_NAMES:-}" \
+            "$STACK_NAME" \
+            "$REGION"
+
       - name: Set passwords for Cognito users to known values for tests
         env:
           TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
@@ -98,37 +124,41 @@ jobs:
           # Fetch stack outputs to populate .env with URL and Client IDs
           ./scripts/fetch-stack-outputs.sh "$STACK_NAME" "$REGION" "default"
           
-          # Extract passwords from stack outputs if secrets are not provided
+          # Extract passwords from Secrets Manager if secrets are not provided
           if [ -z "$TEST_USER_PASSWORD" ] || [ -z "$ADMIN_USER_PASSWORD" ]; then
-            echo "Secrets not provided, extracting passwords from stack outputs..."
+            echo "Secrets not provided, fetching passwords from Secrets Manager..."
             
-            # Get UserPasswords output from stack
-            USER_PASSWORDS_JSON=$(aws cloudformation describe-stacks \
-              --stack-name "$STACK_NAME" \
-              --region "$REGION" \
-              --query "Stacks[0].Outputs[?OutputKey=='UserPasswords'].OutputValue" \
-              --output text)
-            
-            if [ -n "$USER_PASSWORDS_JSON" ] && [ "$USER_PASSWORDS_JSON" != "None" ]; then
-              # Get usernames from stack outputs
-              TEST_USERNAME=$(aws cloudformation describe-stacks \
-                --stack-name "$STACK_NAME" \
+            SECRET_NAME="${STACK_NAME}/UserPasswords"
+            if aws secretsmanager describe-secret --secret-id "$SECRET_NAME" --region "$REGION" >/dev/null 2>&1; then
+              USER_PASSWORDS_JSON=$(aws secretsmanager get-secret-value \
+                --secret-id "$SECRET_NAME" \
                 --region "$REGION" \
-                --query "Stacks[0].Outputs[?OutputKey=='TestUsername'].OutputValue" \
-                --output text)
-              ADMIN_USERNAME=$(aws cloudformation describe-stacks \
-                --stack-name "$STACK_NAME" \
-                --region "$REGION" \
-                --query "Stacks[0].Outputs[?OutputKey=='AdminUsername'].OutputValue" \
+                --query "SecretString" \
                 --output text)
               
-              # Extract passwords from JSON using jq
-              if [ -z "$TEST_USER_PASSWORD" ] && [ -n "$TEST_USERNAME" ]; then
-                TEST_USER_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r ".[\"$TEST_USERNAME\"]")
+              if [ -n "$USER_PASSWORDS_JSON" ] && [ "$USER_PASSWORDS_JSON" != "None" ]; then
+                # Get usernames from stack outputs
+                TEST_USERNAME=$(aws cloudformation describe-stacks \
+                  --stack-name "$STACK_NAME" \
+                  --region "$REGION" \
+                  --query "Stacks[0].Outputs[?OutputKey=='TestUsername'].OutputValue" \
+                  --output text)
+                ADMIN_USERNAME=$(aws cloudformation describe-stacks \
+                  --stack-name "$STACK_NAME" \
+                  --region "$REGION" \
+                  --query "Stacks[0].Outputs[?OutputKey=='AdminUsername'].OutputValue" \
+                  --output text)
+                
+                # Extract passwords from JSON using jq
+                if [ -z "$TEST_USER_PASSWORD" ] && [ -n "$TEST_USERNAME" ]; then
+                  TEST_USER_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r ".[\"$TEST_USERNAME\"]")
+                fi
+                if [ -z "$ADMIN_USER_PASSWORD" ] && [ -n "$ADMIN_USERNAME" ]; then
+                  ADMIN_USER_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r ".[\"$ADMIN_USERNAME\"]")
+                fi
               fi
-              if [ -z "$ADMIN_USER_PASSWORD" ] && [ -n "$ADMIN_USERNAME" ]; then
-                ADMIN_USER_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r ".[\"$ADMIN_USERNAME\"]")
-              fi
+            else
+              echo "Warning: Secret $SECRET_NAME not found in Secrets Manager"
             fi
           fi
           
