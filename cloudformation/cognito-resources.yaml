@@ -9,12 +9,15 @@ Parameters:
   WebsiteDistributionDomainName:
     Type: String
     Description: The domain name of the CloudFront distribution for callback URLs.
-  TestUserName:
+  UserNames:
     Type: String
-    Description: "The username of the pre-created test user"
-  AdminUserName:
+    Description: "Comma-separated list of usernames (email addresses) to create"
+    Default: "test.user@example.com,edoatley@example.com,admin.user@example.com"
+  AdminUserNames:
     Type: String
-    Description: "The username for the pre-created admin user."
+    Description: "Comma-separated list of usernames that should be added to the SecurityAdmins group"
+    Default: "admin.user@example.com"
+
 
 Resources:
   UserPreferencesUserPool:
@@ -63,17 +66,6 @@ Resources:
         - 'uktv-guide-${Suffix}'
         - { Suffix: !Select [2, !Split ['/', !Ref 'AWS::StackId']] }
 
-  TestUser:
-    Type: AWS::Cognito::UserPoolUser
-    Properties:
-      UserPoolId: !Ref UserPreferencesUserPool
-      Username: !Ref TestUserName
-      UserAttributes:
-        - Name: email
-          Value: !Ref TestUserName
-        - Name: email_verified
-          Value: "true"
-
   SecurityAdminsGroup:
     Type: AWS::Cognito::UserPoolGroup
     Properties:
@@ -81,23 +73,48 @@ Resources:
       UserPoolId: !Ref UserPreferencesUserPool
       Description: "Group for application administrators with access to the admin screen."
 
-  AdminUser:
-    Type: AWS::Cognito::UserPoolUser
+  # Lambda execution role for user creation
+  UserCreationLambdaRole:
+    Type: AWS::IAM::Role
     Properties:
-      UserPoolId: !Ref UserPreferencesUserPool
-      Username: !Ref AdminUserName
-      UserAttributes:
-        - Name: email
-          Value: !Ref AdminUserName
-        - Name: email_verified
-          Value: "true"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: UserCreationPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${RootStackName}-UserCreation:*"
+              - Effect: Allow
+                Action:
+                  - cognito-idp:AdminCreateUser
+                  - cognito-idp:AdminGetUser
+                  - cognito-idp:AdminSetUserPassword
+                  - cognito-idp:AdminAddUserToGroup
+                  - cognito-idp:AdminDeleteUser
+                Resource: !GetAtt UserPreferencesUserPool.Arn
 
-  AdminUserToGroupAttachment:
-    Type: AWS::Cognito::UserPoolUserToGroupAttachment
+  # Lambda function to create users with random passwords
+  # This function can be invoked directly via AWS CLI or SDK
+  UserCreationFunction:
+    Type: AWS::Serverless::Function
     Properties:
-      GroupName: !Ref SecurityAdminsGroup
-      Username: !Ref AdminUserName
-      UserPoolId: !Ref UserPreferencesUserPool
+      FunctionName: !Sub "${RootStackName}-UserCreation"
+      CodeUri: ../src/add_cognito_user/
+      Handler: add_cognito_user.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt UserCreationLambdaRole.Arn
+      Timeout: 60
 
 Outputs:
   UserPoolId:
@@ -108,16 +125,29 @@ Outputs:
     Value: !GetAtt UserPreferencesUserPool.Arn
   UserPoolDomain:
     Description: "The full domain of the Cognito User Pool"
-    Value: !Sub "${UserPoolDomain}.auth.${AWS::Region}.amazoncognito.com"
-  TestUsername:
-    Description: "The username of the pre-created test user"
-    Value: !Ref TestUserName
-  AdminUsername:
-    Description: "The username of the pre-created admin user"
-    Value: !Ref AdminUserName
+    Value: !Sub
+      - 'uktv-guide-${Suffix}.auth.${Region}.amazoncognito.com'
+      - Suffix: !Select [2, !Split ['/', !Ref 'AWS::StackId']]
+        Region: !Ref AWS::Region
+  UserCreationFunctionName:
+    Description: "The name of the Lambda function for creating Cognito users"
+    Value: !Ref UserCreationFunction
+  UserNames:
+    Description: "List of created usernames"
+    Value: !Ref UserNames
+  AdminUserNames:
+    Description: "List of admin usernames"
+    Value: !Ref AdminUserNames
   UserPoolClientId:
     Description: "The ID of the Cognito User Pool App Client for the web app"
     Value: !Ref UserPreferencesUserPoolClient
   TestScriptUserPoolClientId:
     Description: "The ID of the Cognito User Pool App Client for test scripts"
     Value: !Ref TestScriptUserPoolClient
+  # Backward compatibility outputs
+  TestUsername:
+    Description: "The username of the first test user (backward compatibility)"
+    Value: !Select [0, !Split [",", !Ref UserNames]]
+  AdminUsername:
+    Description: "The username of the first admin user (backward compatibility)"
+    Value: !Select [0, !Split [",", !Ref AdminUserNames]]

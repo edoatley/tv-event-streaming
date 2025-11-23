@@ -1,0 +1,3 @@
+# boto3 is included in the Lambda runtime
+# Using custom send_cfn_response function instead of cfn-response package
+# to avoid Python 3.12 compatibility issues

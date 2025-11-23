@@ -1,0 +1,60 @@
+{
+  // Configure YAML extension to recognize CloudFormation tags
+  "yaml.customTags": [
+    "!And",
+    "!And sequence",
+    "!If",
+    "!If sequence",
+    "!Not",
+    "!Not sequence",
+    "!Equals",
+    "!Equals sequence",
+    "!Or",
+    "!Or sequence",
+    "!FindInMap",
+    "!FindInMap sequence",
+    "!Base64",
+    "!Cidr",
+    "!Ref",
+    "!Sub",
+    "!Sub sequence",
+    "!GetAtt",
+    "!GetAtt sequence",
+    "!GetAZs",
+    "!ImportValue",
+    "!Select",
+    "!Select sequence",
+    "!Split",
+    "!Split sequence",
+    "!Join",
+    "!Join sequence",
+    "!Transform",
+    "!Transform sequence"
+  ],
+  // Disable YAML schema validation - let cfn-lint handle CloudFormation validation
+  "yaml.schemas": {},
+  "yaml.schemaStore.enable": false,
+  "yaml.validate": false,
+  "yaml.completion": true,
+  "yaml.hover": true,
+  "yaml.format.enable": true,
+  // Configure file associations
+  "files.associations": {
+    "cloudformation/**/*.yaml": "yaml",
+    "cloudformation/**/*.yml": "yaml"
+  },
+  // Configure cfn-lint extension settings
+  "cfnLint.enabled": true,
+  "cfnLint.path": "/usr/local/bin/cfn-lint",
+  "cfnLint.appendRules": [],
+  "cfnLint.ignoreRules": [],
+  "cfnLint.configureRules": {},
+  "cfnLint.overrideSpecPath": "",
+  "cfnLint.appendRegions": [],
+  "cfnLint.clearCache": false,
+  // YAML editor settings
+  "[yaml]": {
+    "editor.defaultFormatter": null,
+    "editor.formatOnSave": false
+  }
+}

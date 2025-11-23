@@ -40,6 +40,26 @@ jobs:
       - name: Check for failed deploy
         run: bash ./github/scripts/recover-failed-stack.sh
 
+      - name: Read User Configuration
+        id: users
+        run: |
+          # Read user configuration from config/users.json
+          USER_NAMES=$(jq -r '.users[].email' config/users.json | tr '\n' ',' | sed 's/,$//')
+          ADMIN_USER_NAMES=$(jq -r '.users[] | select(.type == "admin") | .email' config/users.json | tr '\n' ',' | sed 's/,$//')
+          TEST_USERNAME=$(jq -r '.users[] | select(.type == "standard") | .email' config/users.json | head -1)
+          ADMIN_USERNAME=$(jq -r '.users[] | select(.type == "admin") | .email' config/users.json | head -1)
+          
+          echo "user_names=$USER_NAMES" >> $GITHUB_OUTPUT
+          echo "admin_user_names=${ADMIN_USER_NAMES:-}" >> $GITHUB_OUTPUT
+          echo "test_username=$TEST_USERNAME" >> $GITHUB_OUTPUT
+          echo "admin_username=$ADMIN_USERNAME" >> $GITHUB_OUTPUT
+          
+          echo "Configured users:"
+          echo "  All users: $USER_NAMES"
+          echo "  Admin users: ${ADMIN_USER_NAMES:-none}"
+          echo "  Test user: $TEST_USERNAME"
+          echo "  Admin user: $ADMIN_USERNAME"
+
       - name: Deploy
         env:
           WATCHMODE_API_KEY: ${{ secrets.WATCHMODE_API_KEY }}
@@ -50,18 +70,58 @@ jobs:
             --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
             --no-fail-on-empty-changeset \
             --no-confirm-changeset \
-            --parameter-overrides "CreateDataStream=true" "WatchModeApiKey=${WATCHMODE_API_KEY}"
+            --parameter-overrides \
+              "CreateDataStream=true" \
+              "WatchModeApiKey=${WATCHMODE_API_KEY}" \
+              "TestUserName=${{ steps.users.outputs.test_username }}" \
+              "AdminUserName=${{ steps.users.outputs.admin_username }}"
 
-      - name: Set passwords for Cognito users
+      - name: Create Cognito Users
+        run: |
+          # Fetch UserPoolId from stack outputs
+          USER_POOL_ID=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --region "$REGION" \
+            --query "Stacks[0].Outputs[?OutputKey=='UserPoolId'].OutputValue" \
+            --output text)
+          
+          if [ -z "$USER_POOL_ID" ] || [ "$USER_POOL_ID" == "None" ]; then
+            echo "Error: Could not retrieve UserPoolId from stack outputs"
+            exit 1
+          fi
+          
+          # Get usernames from config file
+          USER_NAMES="${{ steps.users.outputs.user_names }}"
+          ADMIN_USER_NAMES="${{ steps.users.outputs.admin_user_names }}"
+          
+          if [ -z "$USER_NAMES" ]; then
+            echo "Error: Could not retrieve user names from configuration"
+            exit 1
+          fi
+          
+          # Invoke user creation script
+          bash ./scripts/deploy/create-cognito-users.sh \
+            "$USER_POOL_ID" \
+            "$USER_NAMES" \
+            "${ADMIN_USER_NAMES:-}" \
+            "$STACK_NAME" \
+            "$REGION"
+
+      - name: Set passwords for Cognito users to known values for tests
         env:
           TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
           ADMIN_USER_PASSWORD: ${{ secrets.ADMIN_USER_PASSWORD }}
         run: |
-          bash ./github/scripts/set-cognito-passwords.sh \
-            ${TEST_USER_PASSWORD} \
-            ${ADMIN_USER_PASSWORD} \
-            ${STACK_NAME} \
-            ${REGION}
+          # Only run if both passwords are provided
+          if [ -n "$TEST_USER_PASSWORD" ] && [ -n "$ADMIN_USER_PASSWORD" ]; then
+            bash ./github/scripts/set-cognito-passwords.sh \
+              ${TEST_USER_PASSWORD} \
+              ${ADMIN_USER_PASSWORD} \
+              ${STACK_NAME} \
+              ${REGION}
+          else
+            echo "Skipping password setting - secrets not provided. Will use passwords from stack outputs."
+          fi
 
       - name: Update Website Contents
         run: bash ./github/scripts/update-website-contents.sh ${STACK_NAME} ${REGION}
@@ -69,4 +129,102 @@ jobs:
       - name: Clear Cloudfront cache
         run: bash ./github/scripts/clear-cloudfront-cache.sh ${STACK_NAME} ${REGION}
 
+  ui-tests:
+    runs-on: ubuntu-latest
+    needs: deploy
+    # Require token generation access to authenticate with AWS OIDC
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      STACK_NAME: tv-event-streaming-gha
+      REGION: eu-west-2
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
 
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Test Dependencies
+        working-directory: ./tests/ui
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        working-directory: ./tests/ui
+        run: npx playwright install --with-deps
+
+      - name: Configure Test Environment
+        working-directory: ./tests/ui
+        env:
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+          ADMIN_USER_PASSWORD: ${{ secrets.ADMIN_USER_PASSWORD }}
+        run: |
+          # Fetch stack outputs to populate .env with URL and Client IDs
+          ./scripts/fetch-stack-outputs.sh "$STACK_NAME" "$REGION" "default"
+          
+          # Extract passwords from Secrets Manager if secrets are not provided
+          if [ -z "$TEST_USER_PASSWORD" ] || [ -z "$ADMIN_USER_PASSWORD" ]; then
+            echo "Secrets not provided, fetching passwords from Secrets Manager..."
+            
+            SECRET_NAME="${STACK_NAME}/UserPasswords"
+            if aws secretsmanager describe-secret --secret-id "$SECRET_NAME" --region "$REGION" >/dev/null 2>&1; then
+              USER_PASSWORDS_JSON=$(aws secretsmanager get-secret-value \
+                --secret-id "$SECRET_NAME" \
+                --region "$REGION" \
+                --query "SecretString" \
+                --output text)
+              
+              if [ -n "$USER_PASSWORDS_JSON" ] && [ "$USER_PASSWORDS_JSON" != "None" ]; then
+                # Get usernames from stack outputs
+                TEST_USERNAME=$(aws cloudformation describe-stacks \
+                  --stack-name "$STACK_NAME" \
+                  --region "$REGION" \
+                  --query "Stacks[0].Outputs[?OutputKey=='TestUsername'].OutputValue" \
+                  --output text)
+                ADMIN_USERNAME=$(aws cloudformation describe-stacks \
+                  --stack-name "$STACK_NAME" \
+                  --region "$REGION" \
+                  --query "Stacks[0].Outputs[?OutputKey=='AdminUsername'].OutputValue" \
+                  --output text)
+                
+                # Extract passwords from JSON using jq
+                if [ -z "$TEST_USER_PASSWORD" ] && [ -n "$TEST_USERNAME" ]; then
+                  TEST_USER_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r ".[\"$TEST_USERNAME\"]")
+                fi
+                if [ -z "$ADMIN_USER_PASSWORD" ] && [ -n "$ADMIN_USERNAME" ]; then
+                  ADMIN_USER_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r ".[\"$ADMIN_USERNAME\"]")
+                fi
+              fi
+            else
+              echo "Warning: Secret $SECRET_NAME not found in Secrets Manager"
+            fi
+          fi
+          
+          # Append passwords to .env (use secrets if provided, otherwise use extracted passwords)
+          if [ -n "$TEST_USER_PASSWORD" ]; then
+            echo "TEST_USER_PASSWORD=$TEST_USER_PASSWORD" >> .env
+          fi
+          if [ -n "$ADMIN_USER_PASSWORD" ]; then
+            echo "ADMIN_USER_PASSWORD=$ADMIN_USER_PASSWORD" >> .env
+          fi
+
+      - name: Run UI Tests
+        working-directory: ./tests/ui
+        run: npm test
+
+      - name: Upload Test Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tests/ui/playwright-report/
+          retention-days: 5

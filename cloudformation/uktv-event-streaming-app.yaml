@@ -126,21 +126,8 @@ Resources:
       Parameters:
         RootStackName: !Ref AWS::StackName
         WebsiteDistributionDomainName: !GetAtt WebsiteDistribution.DomainName
-        TestUserName: !Ref TestUserName
-        AdminUserName: !Ref AdminUserName
-
-  AdminApiApp:
-    Type: AWS::Serverless::Application
-    Properties:
-      Location: admin-api.yaml
-      Parameters:
-        RootStackName: !Ref AWS::StackName
-        ProgrammesTableName: !Ref ProgrammesTable
-        ProgrammesTableArn: !GetAtt ProgrammesTable.Arn
-        PeriodicReferenceFunctionArn: !GetAtt PeriodicReferenceApp.Outputs.PeriodicReferenceFunctionArn
-        UserPrefsTitleIngestionFunctionArn: !GetAtt UserPrefsTitleIngestionApp.Outputs.UserPrefsTitleIngestionFunctionArn
-        TitleEnrichmentFunctionArn: !GetAtt TitleEnrichmentApp.Outputs.TitleEnrichmentFunctionArn
-        UserPoolArn: !GetAtt CognitoApp.Outputs.UserPoolArn
+        UserNames: !Sub "${TestUserName},${AdminUserName}"
+        AdminUserNames: !Ref AdminUserName
 
   PeriodicReferenceApp:
     Type: AWS::Serverless::Application
@@ -202,6 +189,22 @@ Resources:
         ProgramDataTableArn: !GetAtt ProgrammesTable.Arn
         UserPoolArn: !GetAtt CognitoApp.Outputs.UserPoolArn
 
+  # Moved AdminApiApp to the end to ensure all other apps are available for parameter referencing
+  AdminApiApp:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: admin-api.yaml
+      Parameters:
+        RootStackName: !Ref AWS::StackName
+        ProgrammesTableName: !Ref ProgrammesTable
+        ProgrammesTableArn: !GetAtt ProgrammesTable.Arn
+        PeriodicReferenceFunctionArn: !GetAtt PeriodicReferenceApp.Outputs.PeriodicReferenceFunctionArn
+        UserPrefsTitleIngestionFunctionArn: !GetAtt UserPrefsTitleIngestionApp.Outputs.UserPrefsTitleIngestionFunctionArn
+        TitleEnrichmentFunctionArn: !GetAtt TitleEnrichmentApp.Outputs.TitleEnrichmentFunctionArn
+        UserPreferencesFunctionArn: !GetAtt UserPreferencesApp.Outputs.UserPreferencesFunctionArn
+        WebApiFunctionArn: !GetAtt WebApiApp.Outputs.WebApiFunctionArn
+        UserPoolArn: !GetAtt CognitoApp.Outputs.UserPoolArn
+
 Outputs:
   AdminApiEndpoint:
     Description: "The Admin API endpoint URL"
@@ -227,6 +230,9 @@ Outputs:
   TestUsername:
     Description: "The username of the pre-created test user"
     Value: !GetAtt CognitoApp.Outputs.TestUsername
+  UserCreationFunctionName:
+    Description: "The name of the Lambda function for creating Cognito users"
+    Value: !GetAtt CognitoApp.Outputs.UserCreationFunctionName
   UserPreferencesApiEndpoint:
     Description: "The User Preferences API endpoint URL"
     Value: !GetAtt UserPreferencesApp.Outputs.ApiEndpoint
@@ -239,6 +245,12 @@ Outputs:
   UserPoolId:
     Description: "The ID of the Cognito User Pool"
     Value: !GetAtt CognitoApp.Outputs.UserPoolId
+  UserNames:
+    Description: "Comma-separated list of usernames"
+    Value: !Sub "${TestUserName},${AdminUserName}"
+  AdminUserNames:
+    Description: "Comma-separated list of admin usernames"
+    Value: !Ref AdminUserName
   WebApiEndpoint:
     Description: "The Web API endpoint URL"
     Value: !GetAtt WebApiApp.Outputs.ApiEndpoint
