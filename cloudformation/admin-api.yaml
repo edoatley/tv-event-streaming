@@ -90,7 +90,6 @@ Resources:
   AdminLambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${RootStackName}-AdminLambdaRole"
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:

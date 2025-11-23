@@ -198,11 +198,11 @@ Resources:
         RootStackName: !Ref AWS::StackName
         ProgrammesTableName: !Ref ProgrammesTable
         ProgrammesTableArn: !GetAtt ProgrammesTable.Arn
-        PeriodicReferenceFunctionArn: !GetAtt PeriodicReferenceApp.Outputs.PeriodicReferenceFunctionName
-        UserPrefsTitleIngestionFunctionArn: !GetAtt UserPrefsTitleIngestionApp.Outputs.UserPrefsTitleIngestionFunctionName
-        TitleEnrichmentFunctionArn: !GetAtt TitleEnrichmentApp.Outputs.TitleEnrichmentFunctionName
-        UserPreferencesFunctionArn: !GetAtt UserPreferencesApp.Outputs.UserPreferencesFunctionName
-        WebApiFunctionArn: !GetAtt WebApiApp.Outputs.WebApiFunctionName
+        PeriodicReferenceFunctionArn: !GetAtt PeriodicReferenceApp.Outputs.PeriodicReferenceFunctionArn
+        UserPrefsTitleIngestionFunctionArn: !GetAtt UserPrefsTitleIngestionApp.Outputs.UserPrefsTitleIngestionFunctionArn
+        TitleEnrichmentFunctionArn: !GetAtt TitleEnrichmentApp.Outputs.TitleEnrichmentFunctionArn
+        UserPreferencesFunctionArn: !GetAtt UserPreferencesApp.Outputs.UserPreferencesFunctionArn
+        WebApiFunctionArn: !GetAtt WebApiApp.Outputs.WebApiFunctionArn
         UserPoolArn: !GetAtt CognitoApp.Outputs.UserPoolArn
 
 Outputs:
