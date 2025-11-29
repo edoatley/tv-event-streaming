@@ -13,6 +13,10 @@ Parameters:
   RepositoryName:
     Type: String
     Default: tv-event-streaming
+  SamDeploymentBucketPattern:
+    Type: String
+    Description: "S3 bucket name pattern for SAM deployment artifacts (e.g., 'aws-sam-cli-deploy-*' or specific bucket name)"
+    Default: "aws-sam-cli-deploy-*"
 
 Resources:
   GitHubOidcProvider:
@@ -50,8 +54,6 @@ Resources:
                 Action:
                   # For deploying CloudFormation stacks, including nested stacks via SAM
                   - cloudformation:*
-                  # For SAM to upload templates and Lambda code packages to the deployment bucket
-                  - s3:*
                   # For creating roles for Lambdas and other services, and passing them.
                   # This is a broad permission set required by CloudFormation to manage IAM resources.
                   - iam:*
@@ -76,6 +78,19 @@ Resources:
                   # For managing EventBridge triggers
                   - events:*
                 Resource: "*"
+              # Restricted S3 permissions for SAM deployment bucket only
+              - Effect: Allow
+                Action:
+                  # Specific S3 actions needed for SAM to upload templates and Lambda code packages
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                  - s3:GetBucketLocation
+                  - s3:CreateBucket
+                Resource:
+                  - !Sub "arn:aws:s3:::${SamDeploymentBucketPattern}"
+                  - !Sub "arn:aws:s3:::${SamDeploymentBucketPattern}/*"
 
 Outputs:
   GitHubActionsRoleArn:

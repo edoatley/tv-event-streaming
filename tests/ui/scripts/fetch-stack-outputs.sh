@@ -89,33 +89,33 @@ fi
 echo "Updating ${ENV_PATH}..."
 
 # Function to update or add a variable in .env file
-# Properly handles special characters in values by using a delimiter that's unlikely to appear in passwords
+# Properly handles special characters in values by rewriting the entire file
 update_env_var() {
   local key="$1"
   local value="$2"
-  
-  # Use a temporary file to safely handle special characters
   local temp_file=$(mktemp)
+  local key_found=false
   
-  if grep -q "^${key}=" "${ENV_PATH}"; then
-    # Update existing variable - use a unique delimiter (|) and escape it in the value
-    # Replace | with \| in the value to escape it
-    local escaped_value=$(printf '%s' "$value" | sed 's/|/\\|/g')
-    
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-      # macOS
-      sed "s|^${key}=.*|${key}=${escaped_value}|" "${ENV_PATH}" > "${temp_file}" && mv "${temp_file}" "${ENV_PATH}"
+  # Read the existing .env file line by line and update or add the variable
+  while IFS= read -r line || [ -n "$line" ]; do
+    # Check if this line is the variable we're updating
+    if [[ "$line" =~ ^${key}= ]]; then
+      # Update the existing line
+      printf '%s=%s\n' "${key}" "${value}" >> "${temp_file}"
+      key_found=true
     else
-      # Linux
-      sed -i "s|^${key}=.*|${key}=${escaped_value}|" "${ENV_PATH}"
+      # Keep the original line
+      echo "$line" >> "${temp_file}"
     fi
-  else
-    # Add new variable - write directly to avoid shell interpretation
-    printf '%s=%s\n' "${key}" "${value}" >> "${ENV_PATH}"
+  done < "${ENV_PATH}" 2>/dev/null || true
+  
+  # If the key wasn't found, add it at the end
+  if [ "$key_found" = false ]; then
+    printf '%s=%s\n' "${key}" "${value}" >> "${temp_file}"
   fi
   
-  # Clean up temp file if it still exists
-  [ -f "${temp_file}" ] && rm -f "${temp_file}"
+  # Replace the original file with the updated one
+  mv "${temp_file}" "${ENV_PATH}"
 }
 
 # Update variables
@@ -136,39 +136,68 @@ ADMIN_PASSWORD_EXISTS=$(grep -q "^ADMIN_USER_PASSWORD=" "${ENV_PATH}" 2>/dev/nul
 # Primary source: Secrets Manager (where the pipeline stores passwords)
 if [ "$TEST_PASSWORD_EXISTS" = "no" ] || [ "$ADMIN_PASSWORD_EXISTS" = "no" ]; then
   SECRET_NAME="${STACK_NAME}/UserPasswords"
-  if aws secretsmanager describe-secret --secret-id "$SECRET_NAME" ${AWS_PROFILE_ARG} --region "${REGION}" >/dev/null 2>&1; then
-    echo "  Fetching passwords from Secrets Manager: $SECRET_NAME"
-    SECRET_PASSWORDS_JSON=$(aws secretsmanager get-secret-value \
-      --secret-id "$SECRET_NAME" \
-      ${AWS_PROFILE_ARG} \
-      --region "${REGION}" \
-      --query "SecretString" \
-      --output text 2>/dev/null || echo "")
-    
-    if [ -n "$SECRET_PASSWORDS_JSON" ] && [ "$SECRET_PASSWORDS_JSON" != "null" ] && [ "$SECRET_PASSWORDS_JSON" != "None" ]; then
-      if [ "$TEST_PASSWORD_EXISTS" = "no" ] && [ -n "$TEST_USERNAME" ]; then
-        TEST_USER_PASSWORD=$(echo "$SECRET_PASSWORDS_JSON" | jq -r ".[\"$TEST_USERNAME\"]" 2>/dev/null || echo "")
-        if [ -n "$TEST_USER_PASSWORD" ] && [ "$TEST_USER_PASSWORD" != "null" ]; then
-          update_env_var "TEST_USER_PASSWORD" "$TEST_USER_PASSWORD"
-          echo "  Extracted TEST_USER_PASSWORD from Secrets Manager for user: $TEST_USERNAME"
-          echo "  Password length: ${#TEST_USER_PASSWORD} characters"
-        else
-          echo "  ⚠️  Warning: Could not extract TEST_USER_PASSWORD from Secrets Manager for user: $TEST_USERNAME"
-        fi
-      fi
+  
+  # Retry logic for secret retrieval (handles eventual consistency)
+  MAX_RETRIES=5
+  RETRY_COUNT=0
+  SECRET_PASSWORDS_JSON=""
+  
+  while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if aws secretsmanager describe-secret --secret-id "$SECRET_NAME" ${AWS_PROFILE_ARG} --region "${REGION}" >/dev/null 2>&1; then
+      echo "  Fetching passwords from Secrets Manager: $SECRET_NAME (attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)"
+      SECRET_PASSWORDS_JSON=$(aws secretsmanager get-secret-value \
+        --secret-id "$SECRET_NAME" \
+        ${AWS_PROFILE_ARG} \
+        --region "${REGION}" \
+        --query "SecretString" \
+        --output text 2>/dev/null || echo "")
       
-      if [ "$ADMIN_PASSWORD_EXISTS" = "no" ] && [ -n "$ADMIN_USERNAME" ]; then
-        ADMIN_USER_PASSWORD=$(echo "$SECRET_PASSWORDS_JSON" | jq -r ".[\"$ADMIN_USERNAME\"]" 2>/dev/null || echo "")
-        if [ -n "$ADMIN_USER_PASSWORD" ] && [ "$ADMIN_USER_PASSWORD" != "null" ]; then
-          update_env_var "ADMIN_USER_PASSWORD" "$ADMIN_USER_PASSWORD"
-          echo "  Extracted ADMIN_USER_PASSWORD from Secrets Manager for user: $ADMIN_USERNAME"
-          echo "  Password length: ${#ADMIN_USER_PASSWORD} characters"
+      if [ -n "$SECRET_PASSWORDS_JSON" ] && [ "$SECRET_PASSWORDS_JSON" != "null" ] && [ "$SECRET_PASSWORDS_JSON" != "None" ]; then
+        # Verify it's valid JSON
+        if echo "$SECRET_PASSWORDS_JSON" | jq -e . >/dev/null 2>&1; then
+          break
         else
-          echo "  ⚠️  Warning: Could not extract ADMIN_USER_PASSWORD from Secrets Manager for user: $ADMIN_USERNAME"
+          echo "  ⚠️  Warning: Secret value is not valid JSON, retrying..."
+          SECRET_PASSWORDS_JSON=""
         fi
       fi
     fi
+    
+    RETRY_COUNT=$((RETRY_COUNT + 1))
+    if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+      sleep 2
+    fi
+  done
+  
+  if [ -n "$SECRET_PASSWORDS_JSON" ] && [ "$SECRET_PASSWORDS_JSON" != "null" ] && [ "$SECRET_PASSWORDS_JSON" != "None" ]; then
+    if [ "$TEST_PASSWORD_EXISTS" = "no" ] && [ -n "$TEST_USERNAME" ]; then
+      TEST_USER_PASSWORD=$(echo "$SECRET_PASSWORDS_JSON" | jq -r ".[\"$TEST_USERNAME\"]" 2>/dev/null || echo "")
+      if [ -n "$TEST_USER_PASSWORD" ] && [ "$TEST_USER_PASSWORD" != "null" ] && [ "$TEST_USER_PASSWORD" != "" ]; then
+        update_env_var "TEST_USER_PASSWORD" "$TEST_USER_PASSWORD"
+        echo "  ✅ Extracted TEST_USER_PASSWORD from Secrets Manager for user: $TEST_USERNAME"
+        echo "     Password length: ${#TEST_USER_PASSWORD} characters"
+      else
+        echo "  ❌ ERROR: Could not extract TEST_USER_PASSWORD from Secrets Manager for user: $TEST_USERNAME"
+        echo "     Secret JSON keys: $(echo "$SECRET_PASSWORDS_JSON" | jq -r 'keys | join(", ")' 2>/dev/null || echo "unknown")"
+      fi
+    fi
+    
+    if [ "$ADMIN_PASSWORD_EXISTS" = "no" ] && [ -n "$ADMIN_USERNAME" ]; then
+      ADMIN_USER_PASSWORD=$(echo "$SECRET_PASSWORDS_JSON" | jq -r ".[\"$ADMIN_USERNAME\"]" 2>/dev/null || echo "")
+      if [ -n "$ADMIN_USER_PASSWORD" ] && [ "$ADMIN_USER_PASSWORD" != "null" ] && [ "$ADMIN_USER_PASSWORD" != "" ]; then
+        update_env_var "ADMIN_USER_PASSWORD" "$ADMIN_USER_PASSWORD"
+        echo "  ✅ Extracted ADMIN_USER_PASSWORD from Secrets Manager for user: $ADMIN_USERNAME"
+        echo "     Password length: ${#ADMIN_USER_PASSWORD} characters"
+      else
+        echo "  ❌ ERROR: Could not extract ADMIN_USER_PASSWORD from Secrets Manager for user: $ADMIN_USERNAME"
+        echo "     Secret JSON keys: $(echo "$SECRET_PASSWORDS_JSON" | jq -r 'keys | join(", ")' 2>/dev/null || echo "unknown")"
+      fi
+    fi
+  else
+    echo "  ⚠️  Warning: Could not retrieve secret from Secrets Manager after $MAX_RETRIES attempts"
+    echo "     Secret name: $SECRET_NAME"
   fi
+fi
   
   # Fallback: Try stack outputs (for backward compatibility with older deployments)
   TEST_PASSWORD_EXISTS=$(grep -q "^TEST_USER_PASSWORD=" "${ENV_PATH}" 2>/dev/null && echo "yes" || echo "no")

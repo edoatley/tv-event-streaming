@@ -27,9 +27,14 @@ Parameters:
     Type: String
     Description: "The Hostname for WatchMode API"
     Default: "https://api.watchmode.com"
+  WafWebAclId:
+    Type: String
+    Description: "Optional WAF WebACL ID to associate with CloudFront distribution"
+    Default: ""
 
 Conditions:
   ShouldCreateDataStream: !Equals [ !Ref CreateDataStream, "true" ]
+  HasWafWebAcl: !Not [ !Equals [ !Ref WafWebAclId, "" ] ]
 
 Resources:
   ProgrammesTable:
@@ -50,6 +55,36 @@ Resources:
       StreamSpecification:
         StreamViewType: NEW_IMAGE
 
+  KinesisEncryptionKey:
+    Type: AWS::KMS::Key
+    Condition: ShouldCreateDataStream
+    Properties:
+      Description: !Sub "KMS key for encrypting ${AWS::StackName} Kinesis stream"
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: kms:*
+            Resource: "*"
+          - Sid: Allow Kinesis to use the key
+            Effect: Allow
+            Principal:
+              Service: kinesis.amazonaws.com
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey
+            Resource: "*"
+
+  KinesisEncryptionKeyAlias:
+    Type: AWS::KMS::Alias
+    Condition: ShouldCreateDataStream
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}-kinesis"
+      TargetKeyId: !Ref KinesisEncryptionKey
+
   ProgrammeDataStream:
     Type: AWS::Kinesis::Stream
     Condition: ShouldCreateDataStream
@@ -57,6 +92,9 @@ Resources:
       StreamModeDetails:
         StreamMode: ON_DEMAND
       RetentionPeriodHours: 24
+      StreamEncryption:
+        EncryptionType: KMS
+        KeyId: !Ref KinesisEncryptionKey
 
   WebsiteBucket:
     Type: AWS::S3::Bucket
@@ -67,6 +105,12 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+            # Note: To use Customer Managed Key (CMK), add:
+            # KMSMasterKeyID: !Ref YourKmsKeyId
 
   CloudFrontOAI:
     Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
@@ -109,6 +153,10 @@ Resources:
           DefaultTTL: 86400
           MaxTTL: 31536000
           MinTTL: 0
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+          MinimumProtocolVersion: TLSv1.2_2021
+        WebACLId: !If [HasWafWebAcl, !Ref WafWebAclId, !Ref "AWS::NoValue"]
 
   # --- Nested Applications ---
   CognitoApp:

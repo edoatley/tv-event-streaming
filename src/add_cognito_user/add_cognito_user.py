@@ -6,6 +6,16 @@ import traceback
 import urllib.request
 import urllib.error
 
+def mask_username(username: str) -> str:
+    """Mask a username for logging, showing only first 2 and last 2 characters."""
+    if not username or len(username) <= 4:
+        return "***"
+    return f"{username[:2]}***{username[-2:]}"
+
+def mask_usernames(usernames: list) -> list:
+    """Mask a list of usernames for logging."""
+    return [mask_username(u) for u in usernames] if usernames else []
+
 def generate_password():
     """Generate a random password that meets Cognito requirements"""
     length = 16
@@ -158,8 +168,8 @@ def create_or_update_users(cognito_client, user_pool_id, usernames, admin_userna
             # Continue processing other users
     
     print(f"[DEBUG] Summary - Successful: {len(successful_users)}, Failed: {len(failed_users)}")
-    print(f"[DEBUG] Successful users: {successful_users}")
-    print(f"[DEBUG] Failed users: {failed_users}")
+    print(f"[DEBUG] Successful users: {mask_usernames(successful_users)}")
+    print(f"[DEBUG] Failed users: {mask_usernames(failed_users)}")
     
     return user_passwords, warnings, failed_users
 
@@ -314,7 +324,7 @@ def lambda_handler(event, context):
         
         if failed_users:
             response_data['FailedUsers'] = json.dumps(failed_users)
-            print(f"[WARNING] {len(failed_users)} user(s) failed to create: {failed_users}")
+            print(f"[WARNING] {len(failed_users)} user(s) failed to create: {mask_usernames(failed_users)}")
         
         # Return appropriate response based on invocation type
         if is_cfn_event:

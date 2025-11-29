@@ -18,6 +18,10 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       StageName: Prod
+      # Note: Minimum TLS version for REST APIs without custom domains must be set at the account level.
+      # Ensure TLS 1.2 minimum is configured via AWS CLI or Console:
+      # aws apigateway update-account --patch-ops '[{"op":"replace","path":"/minimumCompressionSize","value":0}]'
+      # Or via Console: API Gateway > Settings > Edit > Minimum TLS version: TLS 1.2
       MethodSettings:
         - ResourcePath: '/*'
           HttpMethod: '*'
