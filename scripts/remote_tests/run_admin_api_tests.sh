@@ -8,8 +8,6 @@ set -o pipefail # The return value of a pipeline is the status of the last comma
 STACK_NAME="${STACK_NAME:-tv-event-streaming-gha}"
 PROFILE="streaming"
 REGION="eu-west-2"
-# This password must match the one in set-cognito-password.sh
-ADMIN_PASSWORD="A-Strong-P@ssw0rd1"
 
 # --- Helper Functions ---
 log() {
@@ -148,8 +146,48 @@ fi
 log "Successfully fetched API and function details."
 info "Admin API Endpoint: $ADMIN_API_ENDPOINT"
 
-# Step 2.5: Authenticate as Admin User to get JWT token
-log "Step 2.5: Authenticating as admin user to get JWT token..."
+# Step 2.5: Get admin password from environment variable or Secrets Manager
+if [ -z "${ADMIN_PASSWORD:-}" ]; then
+    log "ADMIN_PASSWORD not set, attempting to fetch from Secrets Manager..."
+    SECRET_NAME="${STACK_NAME}/UserPasswords"
+    if aws secretsmanager describe-secret --secret-id "$SECRET_NAME" --profile "$PROFILE" --region "$REGION" >/dev/null 2>&1; then
+        log "Found secret in Secrets Manager, retrieving password..."
+        USER_PASSWORDS_JSON=$(aws secretsmanager get-secret-value \
+            --secret-id "$SECRET_NAME" \
+            --profile "$PROFILE" \
+            --region "$REGION" \
+            --query "SecretString" \
+            --output text)
+        
+        if [ -n "$USER_PASSWORDS_JSON" ] && [ "$USER_PASSWORDS_JSON" != "None" ]; then
+            SECRET_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r ".[\"$ADMIN_USERNAME\"]")
+            if [ -n "$SECRET_PASSWORD" ] && [ "$SECRET_PASSWORD" != "null" ]; then
+                ADMIN_PASSWORD="$SECRET_PASSWORD"
+                log "Password retrieved from Secrets Manager"
+            else
+                warn "Password not found in Secrets Manager for user: $ADMIN_USERNAME"
+            fi
+        else
+            warn "Secret exists but contains no data"
+        fi
+    else
+        warn "Secret $SECRET_NAME not found in Secrets Manager"
+    fi
+fi
+
+# Fail if password is still not set - no hardcoded fallback for security
+if [ -z "${ADMIN_PASSWORD:-}" ]; then
+    error "ADMIN_PASSWORD is not set and could not be retrieved from Secrets Manager."
+    error "Please either:"
+    error "  1. Set ADMIN_PASSWORD environment variable, or"
+    error "  2. Ensure the secret '${STACK_NAME}/UserPasswords' exists in Secrets Manager with the password for user '$ADMIN_USERNAME'"
+    error "To set the password in Cognito, run:"
+    error "  ./scripts/deploy/set-cognito-password.sh <password> $STACK_NAME $PROFILE $REGION"
+    exit 1
+fi
+
+# Step 2.6: Authenticate as Admin User to get JWT token
+log "Step 2.6: Authenticating as admin user to get JWT token..."
 if [ -z "$ADMIN_USERNAME" ] || [ -z "$USER_POOL_CLIENT_ID" ]; then
     error "Could not retrieve Cognito details (AdminUsername, TestScriptUserPoolClientId) from stack outputs."
 fi

@@ -4,10 +4,19 @@
 set -e
 
 # --- Parameters ---
-STACK_NAME="${1:-uktv-event-streaming-app}"
-PROFILE="${2:-default}"
-REGION="${3:-eu-west-2}"
-NEW_PASSWORD="A-Strong-P@ssw0rd1"
+# Password must be provided as first argument or via PASSWORD environment variable
+NEW_PASSWORD="${1:-${PASSWORD:-}}"
+STACK_NAME="${2:-uktv-event-streaming-app}"
+PROFILE="${3:-default}"
+REGION="${4:-eu-west-2}"
+
+# --- Validation ---
+if [ -z "$NEW_PASSWORD" ]; then
+    echo "❌ ERROR: Password is required." >&2
+    echo "Usage: $0 <password> [stack-name] [profile] [region]" >&2
+    echo "   Or set PASSWORD environment variable" >&2
+    exit 1
+fi
 
 echo "Fetching outputs from CloudFormation stack: $STACK_NAME..."
 

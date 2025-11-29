@@ -9,6 +9,13 @@ import logging
 logger = logging.getLogger()
 logger.setLevel(os.environ.get("LOG_LEVEL", "INFO").upper()) # Allow log level to be set by env var
 
+
+def mask_arn(arn: str, visible_chars: int = 4) -> str:
+    """Mask an ARN for logging, showing only the last few characters."""
+    if not arn or len(arn) <= visible_chars:
+        return "***"
+    return f"***{arn[-visible_chars:]}"
+
 # Define constants for DynamoDB keys and prefixes
 PK_FIELD = 'PK'
 SK_FIELD = 'SK'
@@ -67,7 +74,7 @@ def get_watchmode_api_key_secret() -> str:
         raise ValueError("Secrets Manager client was not initialized. Check WATCHMODE_API_KEY_SECRET_ARN.")
 
     try:
-        logger.info(f"Fetching secret: {WATCHMODE_API_KEY_SECRET_ARN}")
+        logger.info(f"Fetching secret: {mask_arn(WATCHMODE_API_KEY_SECRET_ARN)}")
         secret_value_response = secrets_manager_client.get_secret_value(
             SecretId=WATCHMODE_API_KEY_SECRET_ARN
         )

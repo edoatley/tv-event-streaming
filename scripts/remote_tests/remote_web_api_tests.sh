@@ -9,7 +9,6 @@ set -o pipefail # The return value of a pipeline is the status of the last comma
 STACK_NAME="${STACK_NAME:-tv-event-streaming-gha}"
 PROFILE="streaming"
 REGION="eu-west-2"
-TEST_USER_PASSWORD="A-Strong-P@ssw0rd1" # This should match the password set in remote_deploy.sh
 
 # --- Helper Functions ---
 log() {
@@ -23,6 +22,10 @@ info() {
 error() {
     echo "❌ ERROR: $1" >&2
     exit 1
+}
+
+warn() {
+    echo "⚠️  WARNING: $1" >&2
 }
 
 diag_header() {
@@ -147,13 +150,6 @@ if ! command -v jq &> /dev/null; then
 fi
 log "Prerequisite check passed (jq is installed)."
 
-# run set-cognito-password.sh to set the password for the test user
-log "Step 0: Setting password for test user..."
-root_dir=$(git rev-parse --show-toplevel)
-$root_dir/scripts/deploy/set-cognito-password.sh "$STACK_NAME" "$PROFILE" "$REGION"
-
-log "Password for test user set successfully."
-
 # Step 1: Check AWS session
 log "Step 1: Checking AWS SSO session for profile: ${PROFILE}..."
 if ! aws sts get-caller-identity --profile "${PROFILE}" > /dev/null 2>&1; then
@@ -190,6 +186,46 @@ log "Successfully fetched stack outputs."
 info "API Endpoint: $API_ENDPOINT"
 info "Test Username: $TEST_USERNAME"
 info "User Pool ID and Client ID: $USER_POOL_ID, $USER_POOL_CLIENT_ID"
+
+# Step 2.5: Get test user password from environment variable or Secrets Manager
+if [ -z "${TEST_USER_PASSWORD:-}" ]; then
+    log "TEST_USER_PASSWORD not set, attempting to fetch from Secrets Manager..."
+    SECRET_NAME="${STACK_NAME}/UserPasswords"
+    if aws secretsmanager describe-secret --secret-id "$SECRET_NAME" --profile "$PROFILE" --region "$REGION" >/dev/null 2>&1; then
+        log "Found secret in Secrets Manager, retrieving password..."
+        USER_PASSWORDS_JSON=$(aws secretsmanager get-secret-value \
+            --secret-id "$SECRET_NAME" \
+            --profile "$PROFILE" \
+            --region "$REGION" \
+            --query "SecretString" \
+            --output text)
+        
+        if [ -n "$USER_PASSWORDS_JSON" ] && [ "$USER_PASSWORDS_JSON" != "None" ]; then
+            SECRET_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r ".[\"$TEST_USERNAME\"]")
+            if [ -n "$SECRET_PASSWORD" ] && [ "$SECRET_PASSWORD" != "null" ]; then
+                TEST_USER_PASSWORD="$SECRET_PASSWORD"
+                log "Password retrieved from Secrets Manager"
+            else
+                warn "Password not found in Secrets Manager for user: $TEST_USERNAME"
+            fi
+        else
+            warn "Secret exists but contains no data"
+        fi
+    else
+        warn "Secret $SECRET_NAME not found in Secrets Manager"
+    fi
+fi
+
+# Fail if password is still not set - no hardcoded fallback for security
+if [ -z "${TEST_USER_PASSWORD:-}" ]; then
+    error "TEST_USER_PASSWORD is not set and could not be retrieved from Secrets Manager."
+    error "Please either:"
+    error "  1. Set TEST_USER_PASSWORD environment variable, or"
+    error "  2. Ensure the secret '${STACK_NAME}/UserPasswords' exists in Secrets Manager with the password for user '$TEST_USERNAME'"
+    error "To set the password in Cognito, run:"
+    error "  ./scripts/deploy/set-cognito-password.sh <password> $STACK_NAME $PROFILE $REGION"
+    exit 1
+fi
 
 # Step 3: Authenticate with Cognito
 log "Step 3: Authenticating test user '$TEST_USERNAME' with Cognito..."

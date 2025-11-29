@@ -43,7 +43,40 @@ fi
 
 
 ########################################################################################################################
-echo "🚀 Step 3: Deploying the application with SAM..."
+echo "🚀 Step 3: Creating or updating WatchMode API Key Secret..."
+########################################################################################################################
+if [ -z "$WATCHMODE_API_KEY" ]; then
+    echo "❌ Error: WATCHMODE_API_KEY environment variable is not set."
+    echo "Please set it before running this script: export WATCHMODE_API_KEY='your-api-key-here'"
+    exit 1
+fi
+
+SECRET_NAME="${STACK_NAME}/WatchModeApiKey"
+
+# Check if secret exists
+if aws secretsmanager describe-secret --secret-id "$SECRET_NAME" --profile "$PROFILE" --region "$REGION" >/dev/null 2>&1; then
+    echo "📝 Updating existing secret: $SECRET_NAME"
+    aws secretsmanager update-secret \
+        --secret-id "$SECRET_NAME" \
+        --secret-string "$WATCHMODE_API_KEY" \
+        --profile "$PROFILE" \
+        --region "$REGION"
+else
+    echo "📝 Creating new secret: $SECRET_NAME"
+    aws secretsmanager create-secret \
+        --name "$SECRET_NAME" \
+        --description "WatchMode API key for stack $STACK_NAME" \
+        --secret-string "$WATCHMODE_API_KEY" \
+        --profile "$PROFILE" \
+        --region "$REGION"
+fi
+
+# Get the secret ARN
+WATCHMODE_SECRET_ARN=$(aws secretsmanager describe-secret --secret-id "$SECRET_NAME" --profile "$PROFILE" --region "$REGION" --query "ARN" --output text)
+echo "✅ Secret created/updated: $WATCHMODE_SECRET_ARN"
+
+########################################################################################################################
+echo "🚀 Step 4: Deploying the application with SAM..."
 ########################################################################################################################
 sam build --use-container
 
@@ -52,7 +85,7 @@ sam deploy \
     --profile "$PROFILE" \
     --region "$REGION" \
     --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
-     --parameter-overrides "CreateDataStream=true" "WatchModeApiKey=${WATCHMODE_API_KEY}"
+    --parameter-overrides "CreateDataStream=true" "WatchModeApiKeySecretArn=${WATCHMODE_SECRET_ARN}"
 
 echo "✅ Deployment complete."
 echo "⏳ Waiting for 30 seconds for resources to initialize..."
@@ -73,7 +106,7 @@ echo "ℹ️ Using DynamoDB table: $TABLE_NAME"
 
 
 ########################################################################################################################
-echo "🔄 Step 4: Triggering reference data refresh..."
+echo "🔄 Step 5: Triggering reference data refresh..."
 ########################################################################################################################
 sam remote invoke PeriodicReferenceApp/PeriodicReferenceFunction \
   --stack-name "$STACK_NAME" \
@@ -84,7 +117,7 @@ sleep 5
 
 
 ########################################################################################################################
-echo "👤 Step 5: Creating user preferences..."
+echo "👤 Step 6: Creating user preferences..."
 ########################################################################################################################
 sam remote invoke UserPreferencesApp/UserPreferencesFunction \
   --stack-name "$STACK_NAME" \
@@ -95,7 +128,7 @@ sleep 5
 
 
 ########################################################################################################################
-echo "📥 Step 6: Triggering user preferences ingestion..."
+echo "📥 Step 7: Triggering user preferences ingestion..."
 ########################################################################################################################
 sam remote invoke UserPrefsTitleIngestionApp/UserPrefsTitleIngestionFunction \
   --stack-name "$STACK_NAME" \
@@ -105,7 +138,7 @@ echo "✅ User preferences ingestion triggered."
 
 
 ########################################################################################################################
-echo "⏳ Step 7: Verifying data in DynamoDB..."
+echo "⏳ Step 8: Verifying data in DynamoDB..."
 ########################################################################################################################
 echo "Waiting for 90 seconds for data to flow through Kinesis, be consumed, and enriched..."
 sleep 90
@@ -130,7 +163,7 @@ fi
 
 
 ########################################################################################################################
-echo "⏳ Step 8: Dump data from DynamoDB..."
+echo "⏳ Step 9: Dump data from DynamoDB..."
 ########################################################################################################################
 # There are 4 types of data we shall extract into 4 different files
 # - genres
@@ -172,7 +205,7 @@ aws dynamodb scan \
 
 
 ########################################################################################################################
-echo "🗑️ Step 9: Tearing down the infrastructure..."
+echo "🗑️ Step 10: Tearing down the infrastructure..."
 ########################################################################################################################
 sam delete \
   --stack-name "$STACK_NAME" \

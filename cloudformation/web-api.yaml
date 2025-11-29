@@ -12,6 +12,14 @@ Parameters:
   StageName:
     Type: String
     Default: Prod
+  ApiDomainName:
+    Type: String
+    Default: ""
+    Description: "Custom domain name for the API (optional - if not provided, API will use default execute-api domain)"
+  ApiCertificateArn:
+    Type: String
+    Default: ""
+    Description: "ACM certificate ARN for the custom domain (optional - required only if ApiDomainName is provided)"
 
 Resources:
   WebApi:
@@ -32,6 +40,34 @@ Resources:
           LoggingLevel: INFO
           DataTraceEnabled: true
           MetricsEnabled: true
+          ThrottlingBurstLimit: 200
+          ThrottlingRateLimit: 100
+        # Stricter limits for authenticated endpoints
+        - ResourcePath: '/titles'
+          HttpMethod: GET
+          ThrottlingBurstLimit: 100
+          ThrottlingRateLimit: 50
+        - ResourcePath: '/recommendations'
+          HttpMethod: GET
+          ThrottlingBurstLimit: 100
+          ThrottlingRateLimit: 50
+        - ResourcePath: '/preferences'
+          HttpMethod: GET
+          ThrottlingBurstLimit: 100
+          ThrottlingRateLimit: 50
+        - ResourcePath: '/preferences'
+          HttpMethod: PUT
+          ThrottlingBurstLimit: 50
+          ThrottlingRateLimit: 25
+        # More lenient for public endpoints
+        - ResourcePath: '/sources'
+          HttpMethod: GET
+          ThrottlingBurstLimit: 200
+          ThrottlingRateLimit: 100
+        - ResourcePath: '/genres'
+          HttpMethod: GET
+          ThrottlingBurstLimit: 200
+          ThrottlingRateLimit: 100
 
   WebApiAccessLogGroup:
     Type: AWS::Logs::LogGroup

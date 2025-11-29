@@ -80,6 +80,66 @@ The project has made significant progress in establishing the backend data inges
 - [ ] **Implement Admin Screen:** Develop an administrative interface within the web UI to trigger backend data ingestion processes manually.
 - [ ] **Robust automated tests:** enhance the bespoke testing approach with a test pack that validates the deployed application.
 
+## Security & Credential Management
+
+This repository follows security best practices to ensure sensitive credentials are never exposed in the codebase.
+
+### Credential Storage
+
+**All sensitive credentials are stored in AWS Secrets Manager**, not in the repository:
+
+- **User Passwords**: Stored in `${STACK_NAME}/UserPasswords` secret
+- **WatchMode API Key**: Stored in `${STACK_NAME}/WatchModeApiKey` secret
+
+### Security Principles
+
+1. **No Hardcoded Credentials**: All scripts fetch credentials from:
+   - Environment variables (for local development)
+   - AWS Secrets Manager (for deployed environments)
+   - GitHub Secrets (for CI/CD pipelines)
+
+2. **Fail Secure**: Scripts will fail with clear error messages if credentials cannot be retrieved, rather than using default/fallback values.
+
+3. **Least Privilege**: CloudFormation templates reference secrets by ARN only - secret values are never passed as parameters.
+
+4. **Audit Trail**: All credential access goes through Secrets Manager, providing logging and audit capabilities.
+
+### Setting Up Credentials
+
+#### For Local Development
+
+1. **WatchMode API Key**: Set the `WATCHMODE_API_KEY` environment variable:
+   ```bash
+   export WATCHMODE_API_KEY='your-api-key-here'
+   ```
+
+2. **User Passwords**: Set via environment variables or fetch from Secrets Manager:
+   ```bash
+   export TEST_USER_PASSWORD='your-test-password'
+   export ADMIN_USER_PASSWORD='your-admin-password'
+   ```
+
+#### For Deployment
+
+- **GitHub Actions**: Credentials are stored as GitHub Secrets and automatically managed
+- **Manual Deployment**: Scripts will create/update secrets in Secrets Manager before deployment
+
+### Script Usage
+
+All test and deployment scripts will:
+1. Check for environment variables first
+2. Fall back to Secrets Manager if available
+3. Exit with clear error messages if credentials are missing
+
+**Example**: Running a test script without credentials:
+```bash
+./scripts/remote_tests/test_admin_dashboard_api.sh
+# ❌ ERROR: ADMIN_PASSWORD is not set and could not be retrieved from Secrets Manager.
+# Please either:
+#   1. Set ADMIN_PASSWORD environment variable, or
+#   2. Ensure the secret 'tv-event-streaming-gha/UserPasswords' exists in Secrets Manager
+```
+
 ## Target Architecture diagram
 
 ```mermaid

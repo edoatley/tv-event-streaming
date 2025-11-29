@@ -72,9 +72,13 @@ test.describe('Authentication', () => {
       try {
         await page.waitForURL((url) => {
           // Wait for URL to be back on our app's domain
-          return url.hostname === currentHostname || 
-                 (!url.hostname.includes('amazoncognito.com') && 
-                  !url.hostname.includes('cognito-idp'));
+          // Use proper hostname comparison instead of substring matching to prevent subdomain attacks
+          const hostname = url.hostname.toLowerCase();
+          const cognitoDomains = ['amazoncognito.com', 'cognito-idp.us-east-1.amazonaws.com', 'cognito-idp.us-west-2.amazonaws.com'];
+          const isCognitoDomain = cognitoDomains.some(domain => 
+            hostname === domain || hostname.endsWith('.' + domain)
+          );
+          return url.hostname === currentHostname || !isCognitoDomain;
         }, { timeout: 30000, waitUntil: 'domcontentloaded' });
       } catch (e) {
         // If URL wait times out, try waiting for load state as fallback

@@ -64,14 +64,15 @@ export default defineConfig({
         headless: true,
       },
     },
-    {
+    // Firefox project - only run if not in CI or if explicitly requested
+    ...(process.env.CI && !process.env.RUN_FIREFOX_TESTS ? [] : [{
       name: 'firefox',
       use: { 
         ...devices['Desktop Firefox'],
         // Run headless by default unless --headed flag is used
         headless: true,
       },
-    },
+    }]),
   ],
 
   /* Run your local dev server before starting the tests */

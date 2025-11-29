@@ -13,6 +13,14 @@ Parameters:
   RepositoryName:
     Type: String
     Default: tv-event-streaming
+  SamDeploymentBucketPattern:
+    Type: String
+    Description: "S3 bucket name pattern for SAM deployment artifacts (e.g., 'aws-sam-cli-deploy-*' or specific bucket name)"
+    Default: "aws-sam-cli-deploy-*"
+  SamManagedBucketPattern:
+    Type: String
+    Description: "S3 bucket name pattern for SAM CLI managed default source buckets"
+    Default: "aws-sam-cli-managed-default-samclisourcebucket-*"
 
 Resources:
   GitHubOidcProvider:
@@ -50,8 +58,6 @@ Resources:
                 Action:
                   # For deploying CloudFormation stacks, including nested stacks via SAM
                   - cloudformation:*
-                  # For SAM to upload templates and Lambda code packages to the deployment bucket
-                  - s3:*
                   # For creating roles for Lambdas and other services, and passing them.
                   # This is a broad permission set required by CloudFormation to manage IAM resources.
                   - iam:*
@@ -75,7 +81,55 @@ Resources:
                   - scheduler:*
                   # For managing EventBridge triggers
                   - events:*
+                  # For creating and managing KMS keys for encryption (e.g., Kinesis stream encryption)
+                  - kms:*
+                  # For creating and managing WAFv2 WebACLs for CloudFront
+                  - wafv2:*
                 Resource: "*"
+              # Restricted S3 permissions for SAM deployment buckets only
+              - Effect: Allow
+                Action:
+                  # Specific S3 actions needed for SAM to upload templates and Lambda code packages
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                  - s3:GetBucketLocation
+                  - s3:CreateBucket
+                Resource:
+                  # Support both SAM CLI bucket naming patterns
+                  - !Sub "arn:aws:s3:::${SamDeploymentBucketPattern}"
+                  - !Sub "arn:aws:s3:::${SamDeploymentBucketPattern}/*"
+                  - !Sub "arn:aws:s3:::${SamManagedBucketPattern}"
+                  - !Sub "arn:aws:s3:::${SamManagedBucketPattern}/*"
+              # S3 permissions for application buckets (website bucket, etc.)
+              - Effect: Allow
+                Action:
+                  # S3 bucket configuration actions needed for CloudFormation to manage bucket properties
+                  - s3:PutEncryptionConfiguration
+                  - s3:GetEncryptionConfiguration
+                  - s3:PutBucketVersioning
+                  - s3:GetBucketVersioning
+                  - s3:PutBucketPublicAccessBlock
+                  - s3:GetBucketPublicAccessBlock
+                  - s3:PutBucketPolicy
+                  - s3:GetBucketPolicy
+                  - s3:DeleteBucketPolicy
+                  - s3:PutBucketAcl
+                  - s3:GetBucketAcl
+                  - s3:CreateBucket
+                  - s3:DeleteBucket
+                  - s3:ListBucket
+                  - s3:GetBucketLocation
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:DeleteObject
+                  - s3:ListBucketMultipartUploads
+                  - s3:AbortMultipartUpload
+                Resource:
+                  # Allow these actions on application buckets (pattern matches stack-named buckets)
+                  - "arn:aws:s3:::tv-event-streaming-gha-*"
+                  - "arn:aws:s3:::tv-event-streaming-gha-*/*"
 
 Outputs:
   GitHubActionsRoleArn:

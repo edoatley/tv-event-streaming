@@ -60,9 +60,39 @@ jobs:
           echo "  Test user: $TEST_USERNAME"
           echo "  Admin user: $ADMIN_USERNAME"
 
-      - name: Deploy
+      - name: Create or Update WatchMode API Key Secret
         env:
           WATCHMODE_API_KEY: ${{ secrets.WATCHMODE_API_KEY }}
+        run: |
+          SECRET_NAME="${STACK_NAME}/WatchModeApiKey"
+          
+          if [ -z "$WATCHMODE_API_KEY" ]; then
+            echo "Error: WATCHMODE_API_KEY secret is not set in GitHub secrets"
+            exit 1
+          fi
+          
+          # Check if secret exists
+          if aws secretsmanager describe-secret --secret-id "$SECRET_NAME" --region "$REGION" >/dev/null 2>&1; then
+            echo "Updating existing secret: $SECRET_NAME"
+            aws secretsmanager update-secret \
+              --secret-id "$SECRET_NAME" \
+              --secret-string "$WATCHMODE_API_KEY" \
+              --region "$REGION"
+          else
+            echo "Creating new secret: $SECRET_NAME"
+            aws secretsmanager create-secret \
+              --name "$SECRET_NAME" \
+              --description "WatchMode API key for stack $STACK_NAME" \
+              --secret-string "$WATCHMODE_API_KEY" \
+              --region "$REGION"
+          fi
+          
+          # Get the secret ARN
+          SECRET_ARN=$(aws secretsmanager describe-secret --secret-id "$SECRET_NAME" --region "$REGION" --query "ARN" --output text)
+          echo "WatchModeApiKeySecretArn=$SECRET_ARN" >> $GITHUB_ENV
+          echo "✅ Secret created/updated: $SECRET_ARN"
+
+      - name: Deploy
         run: |
           sam deploy \
             --stack-name "$STACK_NAME" \
@@ -72,7 +102,7 @@ jobs:
             --no-confirm-changeset \
             --parameter-overrides \
               "CreateDataStream=true" \
-              "WatchModeApiKey=${WATCHMODE_API_KEY}" \
+              "WatchModeApiKeySecretArn=${WatchModeApiKeySecretArn}" \
               "TestUserName=${{ steps.users.outputs.test_username }}" \
               "AdminUserName=${{ steps.users.outputs.admin_username }}"
 
@@ -106,22 +136,40 @@ jobs:
             "${ADMIN_USER_NAMES:-}" \
             "$STACK_NAME" \
             "$REGION"
+          
+          # Note: Passwords are automatically created by the Lambda function and stored in Secrets Manager
+          # All scripts and tests retrieve passwords from Secrets Manager: ${STACK_NAME}/UserPasswords
 
-      - name: Set passwords for Cognito users to known values for tests
-        env:
-          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
-          ADMIN_USER_PASSWORD: ${{ secrets.ADMIN_USER_PASSWORD }}
+      - name: Verify Passwords in Secrets Manager
         run: |
-          # Only run if both passwords are provided
-          if [ -n "$TEST_USER_PASSWORD" ] && [ -n "$ADMIN_USER_PASSWORD" ]; then
-            bash ./github/scripts/set-cognito-passwords.sh \
-              ${TEST_USER_PASSWORD} \
-              ${ADMIN_USER_PASSWORD} \
-              ${STACK_NAME} \
-              ${REGION}
-          else
-            echo "Skipping password setting - secrets not provided. Will use passwords from stack outputs."
+          bash ./github/scripts/verify-passwords-in-secrets-manager.sh \
+            "$STACK_NAME" \
+            "${{ steps.users.outputs.test_username }}" \
+            "${{ steps.users.outputs.admin_username }}" \
+            "$REGION" \
+            "default"
+
+      - name: Verify Passwords Work with Cognito
+        run: |
+          # Get TestScriptUserPoolClientId from stack outputs
+          TEST_SCRIPT_CLIENT_ID=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --region "$REGION" \
+            --query "Stacks[0].Outputs[?OutputKey=='TestScriptUserPoolClientId'].OutputValue" \
+            --output text)
+          
+          if [ -z "$TEST_SCRIPT_CLIENT_ID" ] || [ "$TEST_SCRIPT_CLIENT_ID" == "None" ]; then
+            echo "⚠️  Warning: Could not retrieve TestScriptUserPoolClientId from stack outputs"
+            echo "Skipping Cognito password verification"
+            exit 0
           fi
+          
+          bash ./github/scripts/verify-passwords-with-cognito.sh \
+            "$STACK_NAME" \
+            "${{ steps.users.outputs.test_username }}" \
+            "${{ steps.users.outputs.admin_username }}" \
+            "$TEST_SCRIPT_CLIENT_ID" \
+            "$REGION"
 
       - name: Update Website Contents
         run: bash ./github/scripts/update-website-contents.sh ${STACK_NAME} ${REGION}
@@ -158,64 +206,27 @@ jobs:
         working-directory: ./tests/ui
         run: npm ci
 
+      - name: Cache Playwright Browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('tests/ui/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
       - name: Install Playwright Browsers
         working-directory: ./tests/ui
-        run: npx playwright install --with-deps
+        # Install only chromium for faster CI runs (~50% faster than installing all browsers)
+        # Use --with-deps to install system dependencies required by browsers
+        # Cache will restore browsers from previous runs, making this step very fast
+        run: npx playwright install chromium --with-deps
 
       - name: Configure Test Environment
         working-directory: ./tests/ui
-        env:
-          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
-          ADMIN_USER_PASSWORD: ${{ secrets.ADMIN_USER_PASSWORD }}
         run: |
-          # Fetch stack outputs to populate .env with URL and Client IDs
-          ./scripts/fetch-stack-outputs.sh "$STACK_NAME" "$REGION" "default"
-          
-          # Extract passwords from Secrets Manager if secrets are not provided
-          if [ -z "$TEST_USER_PASSWORD" ] || [ -z "$ADMIN_USER_PASSWORD" ]; then
-            echo "Secrets not provided, fetching passwords from Secrets Manager..."
-            
-            SECRET_NAME="${STACK_NAME}/UserPasswords"
-            if aws secretsmanager describe-secret --secret-id "$SECRET_NAME" --region "$REGION" >/dev/null 2>&1; then
-              USER_PASSWORDS_JSON=$(aws secretsmanager get-secret-value \
-                --secret-id "$SECRET_NAME" \
-                --region "$REGION" \
-                --query "SecretString" \
-                --output text)
-              
-              if [ -n "$USER_PASSWORDS_JSON" ] && [ "$USER_PASSWORDS_JSON" != "None" ]; then
-                # Get usernames from stack outputs
-                TEST_USERNAME=$(aws cloudformation describe-stacks \
-                  --stack-name "$STACK_NAME" \
-                  --region "$REGION" \
-                  --query "Stacks[0].Outputs[?OutputKey=='TestUsername'].OutputValue" \
-                  --output text)
-                ADMIN_USERNAME=$(aws cloudformation describe-stacks \
-                  --stack-name "$STACK_NAME" \
-                  --region "$REGION" \
-                  --query "Stacks[0].Outputs[?OutputKey=='AdminUsername'].OutputValue" \
-                  --output text)
-                
-                # Extract passwords from JSON using jq
-                if [ -z "$TEST_USER_PASSWORD" ] && [ -n "$TEST_USERNAME" ]; then
-                  TEST_USER_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r ".[\"$TEST_USERNAME\"]")
-                fi
-                if [ -z "$ADMIN_USER_PASSWORD" ] && [ -n "$ADMIN_USERNAME" ]; then
-                  ADMIN_USER_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r ".[\"$ADMIN_USERNAME\"]")
-                fi
-              fi
-            else
-              echo "Warning: Secret $SECRET_NAME not found in Secrets Manager"
-            fi
-          fi
-          
-          # Append passwords to .env (use secrets if provided, otherwise use extracted passwords)
-          if [ -n "$TEST_USER_PASSWORD" ]; then
-            echo "TEST_USER_PASSWORD=$TEST_USER_PASSWORD" >> .env
-          fi
-          if [ -n "$ADMIN_USER_PASSWORD" ]; then
-            echo "ADMIN_USER_PASSWORD=$ADMIN_USER_PASSWORD" >> .env
-          fi
+          ./scripts/configure-test-environment.sh "$STACK_NAME" "$REGION" "default"
 
       - name: Run UI Tests
         working-directory: ./tests/ui
