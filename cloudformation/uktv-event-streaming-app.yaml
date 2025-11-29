@@ -29,7 +29,7 @@ Parameters:
     Default: "https://api.watchmode.com"
   WafWebAclId:
     Type: String
-    Description: "Optional WAF WebACL ID to associate with CloudFront distribution"
+    Description: "Optional WAF WebACL ID to associate with CloudFront distribution (if not provided, a default WebACL will be created)"
     Default: ""
 
 Conditions:
@@ -85,6 +85,34 @@ Resources:
       AliasName: !Sub "alias/${AWS::StackName}-kinesis"
       TargetKeyId: !Ref KinesisEncryptionKey
 
+  S3EncryptionKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub "KMS key for encrypting ${AWS::StackName} S3 bucket"
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: kms:*
+            Resource: "*"
+          - Sid: Allow S3 to use the key
+            Effect: Allow
+            Principal:
+              Service: s3.amazonaws.com
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey
+            Resource: "*"
+
+  S3EncryptionKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}-s3"
+      TargetKeyId: !Ref S3EncryptionKey
+
   ProgrammeDataStream:
     Type: AWS::Kinesis::Stream
     Condition: ShouldCreateDataStream
@@ -108,9 +136,8 @@ Resources:
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
-              SSEAlgorithm: AES256
-            # Note: To use Customer Managed Key (CMK), add:
-            # KMSMasterKeyID: !Ref YourKmsKeyId
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref S3EncryptionKey
 
   CloudFrontOAI:
     Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
@@ -129,6 +156,43 @@ Resources:
               CanonicalUser: !GetAtt CloudFrontOAI.S3CanonicalUserId
             Action: s3:GetObject
             Resource: !Sub "arn:aws:s3:::${WebsiteBucket}/*"
+
+  CloudFrontWebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Sub "${AWS::StackName}-cloudfront-waf"
+      Scope: CLOUDFRONT
+      DefaultAction:
+        Allow: {}
+      Rules:
+        - Name: AWSManagedRulesCommonRuleSet
+          Priority: 1
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesCommonRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: CommonRuleSetMetric
+        - Name: AWSManagedRulesKnownBadInputsRuleSet
+          Priority: 2
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesKnownBadInputsRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: KnownBadInputsRuleSetMetric
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub "${AWS::StackName}-CloudFrontWAF"
 
   WebsiteDistribution:
     Type: AWS::CloudFront::Distribution
@@ -156,7 +220,7 @@ Resources:
         ViewerCertificate:
           CloudFrontDefaultCertificate: true
           MinimumProtocolVersion: TLSv1.2_2021
-        WebACLId: !If [HasWafWebAcl, !Ref WafWebAclId, !Ref "AWS::NoValue"]
+        WebACLId: !If [HasWafWebAcl, !Ref WafWebAclId, !Ref CloudFrontWebACL]
 
   # --- Nested Applications ---
   CognitoApp:

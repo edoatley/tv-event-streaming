@@ -87,19 +87,20 @@ def create_or_update_users(cognito_client, user_pool_id, usernames, admin_userna
             warnings.append("Operation incomplete due to timeout")
             break
         
-        print(f"[DEBUG] Processing user: {username}")
+        masked_username = mask_username(username)
+        print(f"[DEBUG] Processing user: {masked_username}")
         try:
             password = generate_password()
-            print(f"[DEBUG] Generated password for {username} (length: {len(password)})")
+            print(f"[DEBUG] Generated password for {masked_username} (length: {len(password)})")
             
             try:
                 # Check if user exists
-                print(f"[DEBUG] Checking if user exists: {username}")
+                print(f"[DEBUG] Checking if user exists: {masked_username}")
                 cognito_client.admin_get_user(
                     UserPoolId=user_pool_id,
                     Username=username
                 )
-                print(f"[DEBUG] User exists, updating password: {username}")
+                print(f"[DEBUG] User exists, updating password: {masked_username}")
                 # User exists, update password
                 cognito_client.admin_set_user_password(
                     UserPoolId=user_pool_id,
@@ -107,10 +108,10 @@ def create_or_update_users(cognito_client, user_pool_id, usernames, admin_userna
                     Password=password,
                     Permanent=True
                 )
-                print(f"[DEBUG] Successfully updated password for existing user: {username}")
+                print(f"[DEBUG] Successfully updated password for existing user: {masked_username}")
             except cognito_client.exceptions.UserNotFoundException:
                 # Create new user
-                print(f"[DEBUG] User does not exist, creating: {username}")
+                print(f"[DEBUG] User does not exist, creating: {masked_username}")
                 cognito_client.admin_create_user(
                     UserPoolId=user_pool_id,
                     Username=username,
@@ -120,48 +121,48 @@ def create_or_update_users(cognito_client, user_pool_id, usernames, admin_userna
                     ],
                     MessageAction='SUPPRESS'
                 )
-                print(f"[DEBUG] Successfully created user: {username}")
+                print(f"[DEBUG] Successfully created user: {masked_username}")
                 cognito_client.admin_set_user_password(
                     UserPoolId=user_pool_id,
                     Username=username,
                     Password=password,
                     Permanent=True
                 )
-                print(f"[DEBUG] Successfully set password for new user: {username}")
+                print(f"[DEBUG] Successfully set password for new user: {masked_username}")
             
             # Add to admin group if needed
             if username in admin_usernames:
-                print(f"[DEBUG] Adding {username} to SecurityAdmins group")
+                print(f"[DEBUG] Adding {masked_username} to SecurityAdmins group")
                 try:
                     cognito_client.admin_add_user_to_group(
                         UserPoolId=user_pool_id,
                         Username=username,
                         GroupName='SecurityAdmins'
                     )
-                    print(f"[DEBUG] Successfully added {username} to SecurityAdmins group")
+                    print(f"[DEBUG] Successfully added {masked_username} to SecurityAdmins group")
                 except cognito_client.exceptions.ResourceNotFoundException as e:
-                    warning_msg = f"SecurityAdmins group not found when adding {username}: {str(e)}"
+                    warning_msg = f"SecurityAdmins group not found when adding {masked_username}: {str(e)}"
                     print(f"[WARNING] {warning_msg}")
                     warnings.append(warning_msg)
                 except cognito_client.exceptions.InvalidParameterException as e:
-                    warning_msg = f"Invalid parameter when adding {username} to group: {str(e)}"
+                    warning_msg = f"Invalid parameter when adding {masked_username} to group: {str(e)}"
                     print(f"[WARNING] {warning_msg}")
                     warnings.append(warning_msg)
                 except Exception as e:
-                    warning_msg = f"Unexpected error adding {username} to group: {str(e)}"
+                    warning_msg = f"Unexpected error adding {masked_username} to group: {str(e)}"
                     print(f"[WARNING] {warning_msg}")
                     warnings.append(warning_msg)
             
             # User processed successfully
             user_passwords[username] = password
             successful_users.append(username)
-            print(f"[DEBUG] Successfully processed user: {username}")
+            print(f"[DEBUG] Successfully processed user: {masked_username}")
             
         except Exception as e:
             # Catch any error for this specific user and continue with others
-            error_msg = f"Failed to create/update user {username}: {str(e)}"
+            error_msg = f"Failed to create/update user {masked_username}: {str(e)}"
             print(f"[ERROR] {error_msg}")
-            print(f"[DEBUG] Traceback for {username}:")
+            print(f"[DEBUG] Traceback for {masked_username}:")
             traceback.print_exc()
             warnings.append(error_msg)
             failed_users.append(username)
@@ -247,8 +248,16 @@ def lambda_handler(event, context):
         usernames_raw = props.get('UserNames', [])
         admin_usernames_raw = props.get('AdminUserNames', [])
         
-        print(f"[DEBUG] Raw usernames input: {usernames_raw} (type: {type(usernames_raw)})")
-        print(f"[DEBUG] Raw admin usernames input: {admin_usernames_raw} (type: {type(admin_usernames_raw)})")
+        # Helper to mask usernames in lists/strings for logging
+        def mask_for_log(value):
+            if isinstance(value, str):
+                return mask_username(value) if value else value
+            elif isinstance(value, list):
+                return [mask_username(u) if isinstance(u, str) else u for u in value]
+            return value
+        
+        print(f"[DEBUG] Raw usernames input: {mask_for_log(usernames_raw)} (type: {type(usernames_raw)})")
+        print(f"[DEBUG] Raw admin usernames input: {mask_for_log(admin_usernames_raw)} (type: {type(admin_usernames_raw)})")
         
         # Helper to parse comma-separated strings or lists
         def parse_list(raw_input):
@@ -261,8 +270,8 @@ def lambda_handler(event, context):
         usernames = parse_list(usernames_raw)
         admin_usernames = parse_list(admin_usernames_raw)
         
-        print(f"[DEBUG] Parsed usernames: {usernames}")
-        print(f"[DEBUG] Parsed admin usernames: {admin_usernames}")
+        print(f"[DEBUG] Parsed usernames: {mask_usernames(usernames)}")
+        print(f"[DEBUG] Parsed admin usernames: {mask_usernames(admin_usernames)}")
         
         # --- Handle DELETE (CloudFormation only) ---
         if is_cfn_event and request_type == 'Delete':
@@ -278,18 +287,19 @@ def lambda_handler(event, context):
                     response_sent = True
                     return
                 
-                print(f"[DEBUG] Attempting to delete user: {username}")
+                masked_username = mask_username(username)
+                print(f"[DEBUG] Attempting to delete user: {masked_username}")
                 try:
                     cognito_client.admin_delete_user(
                         UserPoolId=user_pool_id,
                         Username=username
                     )
-                    print(f"[DEBUG] Successfully deleted user: {username}")
+                    print(f"[DEBUG] Successfully deleted user: {masked_username}")
                 except cognito_client.exceptions.UserNotFoundException:
-                    print(f"[DEBUG] User not found (already deleted?): {username}")
+                    print(f"[DEBUG] User not found (already deleted?): {masked_username}")
                 except Exception as e:
                     # Log error but continue so we don't fail the whole batch
-                    warning_msg = f"Failed to delete user {username}: {str(e)}"
+                    warning_msg = f"Failed to delete user {masked_username}: {str(e)}"
                     print(f"[WARNING] {warning_msg}")
                     warnings.append(warning_msg)
             

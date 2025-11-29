@@ -12,16 +12,23 @@ Parameters:
   StageName:
     Type: String
     Default: Prod
+  ApiDomainName:
+    Type: String
+    Description: "Custom domain name for the API (required for explicit TLS configuration via Domain SecurityPolicy)"
+  ApiCertificateArn:
+    Type: String
+    Description: "ACM certificate ARN for the custom domain (required for explicit TLS configuration)"
 
 Resources:
   WebApi:
     Type: AWS::Serverless::Api
     Properties:
       StageName: !Ref StageName
-      # Note: Minimum TLS version for REST APIs without custom domains must be set at the account level.
-      # Ensure TLS 1.2 minimum is configured via AWS CLI or Console:
-      # aws apigateway update-account --patch-ops '[{"op":"replace","path":"/minimumCompressionSize","value":0}]'
-      # Or via Console: API Gateway > Settings > Edit > Minimum TLS version: TLS 1.2
+      # Explicitly configure minimum TLS version to TLS 1.2 via Domain SecurityPolicy
+      Domain:
+        SecurityPolicy: TLS_1_2
+        DomainName: !Ref ApiDomainName
+        CertificateArn: !Ref ApiCertificateArn
       Auth:
         DefaultAuthorizer: CognitoAuthorizer
         Authorizers:
