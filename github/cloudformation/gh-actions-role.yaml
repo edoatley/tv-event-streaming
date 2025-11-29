@@ -17,6 +17,10 @@ Parameters:
     Type: String
     Description: "S3 bucket name pattern for SAM deployment artifacts (e.g., 'aws-sam-cli-deploy-*' or specific bucket name)"
     Default: "aws-sam-cli-deploy-*"
+  SamManagedBucketPattern:
+    Type: String
+    Description: "S3 bucket name pattern for SAM CLI managed default source buckets"
+    Default: "aws-sam-cli-managed-default-samclisourcebucket-*"
 
 Resources:
   GitHubOidcProvider:
@@ -82,7 +86,7 @@ Resources:
                   # For creating and managing WAFv2 WebACLs for CloudFront
                   - wafv2:*
                 Resource: "*"
-              # Restricted S3 permissions for SAM deployment bucket only
+              # Restricted S3 permissions for SAM deployment buckets only
               - Effect: Allow
                 Action:
                   # Specific S3 actions needed for SAM to upload templates and Lambda code packages
@@ -93,8 +97,11 @@ Resources:
                   - s3:GetBucketLocation
                   - s3:CreateBucket
                 Resource:
+                  # Support both SAM CLI bucket naming patterns
                   - !Sub "arn:aws:s3:::${SamDeploymentBucketPattern}"
                   - !Sub "arn:aws:s3:::${SamDeploymentBucketPattern}/*"
+                  - !Sub "arn:aws:s3:::${SamManagedBucketPattern}"
+                  - !Sub "arn:aws:s3:::${SamManagedBucketPattern}/*"
 
 Outputs:
   GitHubActionsRoleArn:
