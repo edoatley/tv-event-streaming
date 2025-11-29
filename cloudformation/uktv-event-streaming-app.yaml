@@ -106,14 +106,6 @@ Resources:
               - kms:Decrypt
               - kms:GenerateDataKey
             Resource: "*"
-          - Sid: Allow CloudFront to use the key
-            Effect: Allow
-            Principal:
-              Service: cloudfront.amazonaws.com
-            Action:
-              - kms:Decrypt
-              - kms:GenerateDataKey
-            Resource: "*"
 
   S3EncryptionKeyAlias:
     Type: AWS::KMS::Alias
@@ -144,8 +136,7 @@ Resources:
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
-              SSEAlgorithm: aws:kms
-              KMSMasterKeyID: !Ref S3EncryptionKey
+              SSEAlgorithm: AES256
 
   CloudFrontOAI:
     Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
