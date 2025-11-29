@@ -58,13 +58,21 @@ jobs:
             safety check --file requirements.txt --json --output safety-report.json || true
             if [ -f safety-report.json ]; then
               echo "## Safety Scan Results for ${{ matrix.lambda-dir }}" >> $GITHUB_STEP_SUMMARY
-              cat safety-report.json | jq -r '.vulnerabilities[]? | "- **\(.package_name)**: \(.vulnerable_spec) - \(.advisory)"' >> $GITHUB_STEP_SUMMARY || echo "No vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+              VULN_COUNT=$(jq -r '.vulnerabilities | length' safety-report.json 2>/dev/null || echo "0")
+              if [ "$VULN_COUNT" != "0" ] && [ "$VULN_COUNT" != "null" ]; then
+                echo "⚠️ Found $VULN_COUNT vulnerability/vulnerabilities:" >> $GITHUB_STEP_SUMMARY
+                cat safety-report.json | jq -r '.vulnerabilities[]? | "- **\(.package_name)**: \(.vulnerable_spec) - \(.advisory)"' >> $GITHUB_STEP_SUMMARY
+                echo "::error::Safety check found vulnerabilities in ${{ matrix.lambda-dir }}"
+                exit 1
+              else
+                echo "✅ No vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+              fi
             fi
+            # Run again without JSON to get proper exit code
             safety check --file requirements.txt
           else
             echo "No requirements.txt found in ${{ matrix.lambda-dir }}"
           fi
-        continue-on-error: true
 
       - name: Upload Safety report
         if: always()
@@ -93,8 +101,17 @@ jobs:
         working-directory: ./tests/ui
         run: |
           npm audit --json > npm-audit-report.json || true
-          npm audit --audit-level=moderate
-        continue-on-error: true
+          # Check for HIGH or CRITICAL vulnerabilities
+          if [ -f npm-audit-report.json ]; then
+            HIGH_CRITICAL=$(jq -r '.metadata.vulnerabilities.high + .metadata.vulnerabilities.critical' npm-audit-report.json 2>/dev/null || echo "0")
+            if [ "$HIGH_CRITICAL" != "0" ] && [ "$HIGH_CRITICAL" != "null" ]; then
+              echo "::error::npm audit found $HIGH_CRITICAL HIGH or CRITICAL vulnerabilities"
+              npm audit --audit-level=high
+              exit 1
+            fi
+          fi
+          # Run audit with moderate level for warnings
+          npm audit --audit-level=moderate || true
 
       - name: Upload npm audit report
         if: always()
@@ -130,11 +147,11 @@ jobs:
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH,MEDIUM'
-          exit-code: '0'
+          exit-code: '1'
           skip-dirs: 'node_modules'
 
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
@@ -149,10 +166,13 @@ jobs:
   infrastructure-scan:
     name: Infrastructure Security Scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v5
 
-      - name: Run Trivy on CloudFormation templates
+      - name: Run Trivy on CloudFormation templates (table output)
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'config'
@@ -160,12 +180,30 @@ jobs:
           format: 'table'
           severity: 'CRITICAL,HIGH'
           exit-code: '0'
-          config-policy: 'cloudformation'
+
+      - name: Run Trivy on CloudFormation templates (SARIF output)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-infra-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+
+      - name: Upload infrastructure scan results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: 'trivy-infra-results.sarif'
 
       - name: Generate infrastructure scan summary
         run: |
           echo "## Infrastructure Security Scan Results" >> $GITHUB_STEP_SUMMARY
           echo "CloudFormation templates scanned for security misconfigurations." >> $GITHUB_STEP_SUMMARY
+          if [ -f trivy-infra-results.sarif ]; then
+            echo "Results uploaded to GitHub Security tab." >> $GITHUB_STEP_SUMMARY
+          fi
 
 
 
