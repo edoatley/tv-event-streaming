@@ -89,23 +89,33 @@ fi
 echo "Updating ${ENV_PATH}..."
 
 # Function to update or add a variable in .env file
+# Properly handles special characters in values by using a delimiter that's unlikely to appear in passwords
 update_env_var() {
   local key="$1"
   local value="$2"
   
+  # Use a temporary file to safely handle special characters
+  local temp_file=$(mktemp)
+  
   if grep -q "^${key}=" "${ENV_PATH}"; then
-    # Update existing variable
+    # Update existing variable - use a unique delimiter (|) and escape it in the value
+    # Replace | with \| in the value to escape it
+    local escaped_value=$(printf '%s' "$value" | sed 's/|/\\|/g')
+    
     if [[ "$OSTYPE" == "darwin"* ]]; then
       # macOS
-      sed -i '' "s|^${key}=.*|${key}=${value}|" "${ENV_PATH}"
+      sed "s|^${key}=.*|${key}=${escaped_value}|" "${ENV_PATH}" > "${temp_file}" && mv "${temp_file}" "${ENV_PATH}"
     else
       # Linux
-      sed -i "s|^${key}=.*|${key}=${value}|" "${ENV_PATH}"
+      sed -i "s|^${key}=.*|${key}=${escaped_value}|" "${ENV_PATH}"
     fi
   else
-    # Add new variable
-    echo "${key}=${value}" >> "${ENV_PATH}"
+    # Add new variable - write directly to avoid shell interpretation
+    printf '%s=%s\n' "${key}" "${value}" >> "${ENV_PATH}"
   fi
+  
+  # Clean up temp file if it still exists
+  [ -f "${temp_file}" ] && rm -f "${temp_file}"
 }
 
 # Update variables
@@ -140,7 +150,10 @@ if [ "$TEST_PASSWORD_EXISTS" = "no" ] || [ "$ADMIN_PASSWORD_EXISTS" = "no" ]; th
         TEST_USER_PASSWORD=$(echo "$SECRET_PASSWORDS_JSON" | jq -r ".[\"$TEST_USERNAME\"]" 2>/dev/null || echo "")
         if [ -n "$TEST_USER_PASSWORD" ] && [ "$TEST_USER_PASSWORD" != "null" ]; then
           update_env_var "TEST_USER_PASSWORD" "$TEST_USER_PASSWORD"
-          echo "  Extracted TEST_USER_PASSWORD from Secrets Manager"
+          echo "  Extracted TEST_USER_PASSWORD from Secrets Manager for user: $TEST_USERNAME"
+          echo "  Password length: ${#TEST_USER_PASSWORD} characters"
+        else
+          echo "  ⚠️  Warning: Could not extract TEST_USER_PASSWORD from Secrets Manager for user: $TEST_USERNAME"
         fi
       fi
       
@@ -148,7 +161,10 @@ if [ "$TEST_PASSWORD_EXISTS" = "no" ] || [ "$ADMIN_PASSWORD_EXISTS" = "no" ]; th
         ADMIN_USER_PASSWORD=$(echo "$SECRET_PASSWORDS_JSON" | jq -r ".[\"$ADMIN_USERNAME\"]" 2>/dev/null || echo "")
         if [ -n "$ADMIN_USER_PASSWORD" ] && [ "$ADMIN_USER_PASSWORD" != "null" ]; then
           update_env_var "ADMIN_USER_PASSWORD" "$ADMIN_USER_PASSWORD"
-          echo "  Extracted ADMIN_USER_PASSWORD from Secrets Manager"
+          echo "  Extracted ADMIN_USER_PASSWORD from Secrets Manager for user: $ADMIN_USERNAME"
+          echo "  Password length: ${#ADMIN_USER_PASSWORD} characters"
+        else
+          echo "  ⚠️  Warning: Could not extract ADMIN_USER_PASSWORD from Secrets Manager for user: $ADMIN_USERNAME"
         fi
       fi
     fi
