@@ -142,54 +142,34 @@ jobs:
 
       - name: Verify Passwords in Secrets Manager
         run: |
-          SECRET_NAME="${STACK_NAME}/UserPasswords"
-          TEST_USERNAME="${{ steps.users.outputs.test_username }}"
-          ADMIN_USERNAME="${{ steps.users.outputs.admin_username }}"
+          bash ./github/scripts/verify-passwords-in-secrets-manager.sh \
+            "$STACK_NAME" \
+            "${{ steps.users.outputs.test_username }}" \
+            "${{ steps.users.outputs.admin_username }}" \
+            "$REGION" \
+            "default"
+
+      - name: Verify Passwords Work with Cognito
+        run: |
+          # Get TestScriptUserPoolClientId from stack outputs
+          TEST_SCRIPT_CLIENT_ID=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --region "$REGION" \
+            --query "Stacks[0].Outputs[?OutputKey=='TestScriptUserPoolClientId'].OutputValue" \
+            --output text)
           
-          echo "Verifying passwords are stored in Secrets Manager..."
-          
-          # Wait a moment for eventual consistency
-          sleep 2
-          
-          # Retry logic for secret retrieval
-          MAX_RETRIES=5
-          RETRY_COUNT=0
-          SECRET_RETRIEVED=false
-          
-          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-            if aws secretsmanager describe-secret --secret-id "$SECRET_NAME" --region "$REGION" >/dev/null 2>&1; then
-              SECRET_VALUE=$(aws secretsmanager get-secret-value \
-                --secret-id "$SECRET_NAME" \
-                --region "$REGION" \
-                --query "SecretString" \
-                --output text 2>/dev/null || echo "")
-              
-              if [ -n "$SECRET_VALUE" ] && [ "$SECRET_VALUE" != "null" ] && [ "$SECRET_VALUE" != "None" ]; then
-                # Verify we can extract passwords
-                TEST_PWD=$(echo "$SECRET_VALUE" | jq -r ".[\"$TEST_USERNAME\"]" 2>/dev/null || echo "")
-                ADMIN_PWD=$(echo "$SECRET_VALUE" | jq -r ".[\"$ADMIN_USERNAME\"]" 2>/dev/null || echo "")
-                
-                if [ -n "$TEST_PWD" ] && [ "$TEST_PWD" != "null" ] && [ -n "$ADMIN_PWD" ] && [ "$ADMIN_PWD" != "null" ]; then
-                  echo "✅ Passwords verified in Secrets Manager"
-                  echo "  Test user password length: ${#TEST_PWD} characters"
-                  echo "  Admin user password length: ${#ADMIN_PWD} characters"
-                  SECRET_RETRIEVED=true
-                  break
-                fi
-              fi
-            fi
-            
-            RETRY_COUNT=$((RETRY_COUNT + 1))
-            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-              echo "  Retry $RETRY_COUNT/$MAX_RETRIES: Waiting for secret to be available..."
-              sleep 2
-            fi
-          done
-          
-          if [ "$SECRET_RETRIEVED" = "false" ]; then
-            echo "⚠️  Warning: Could not verify passwords in Secrets Manager after $MAX_RETRIES attempts"
-            echo "This may cause test failures, but deployment will continue"
+          if [ -z "$TEST_SCRIPT_CLIENT_ID" ] || [ "$TEST_SCRIPT_CLIENT_ID" == "None" ]; then
+            echo "⚠️  Warning: Could not retrieve TestScriptUserPoolClientId from stack outputs"
+            echo "Skipping Cognito password verification"
+            exit 0
           fi
+          
+          bash ./github/scripts/verify-passwords-with-cognito.sh \
+            "$STACK_NAME" \
+            "${{ steps.users.outputs.test_username }}" \
+            "${{ steps.users.outputs.admin_username }}" \
+            "$TEST_SCRIPT_CLIENT_ID" \
+            "$REGION"
 
       - name: Update Website Contents
         run: bash ./github/scripts/update-website-contents.sh ${STACK_NAME} ${REGION}
@@ -233,48 +213,7 @@ jobs:
       - name: Configure Test Environment
         working-directory: ./tests/ui
         run: |
-          # Fetch stack outputs to populate .env with URL and Client IDs
-          # This script will also fetch passwords from Secrets Manager (where pipeline stores them)
-          ./scripts/fetch-stack-outputs.sh "$STACK_NAME" "$REGION" "default"
-          
-          # Verify passwords were retrieved and are not empty
-          TEST_PWD_LINE=$(grep "^TEST_USER_PASSWORD=" .env 2>/dev/null || echo "")
-          ADMIN_PWD_LINE=$(grep "^ADMIN_USER_PASSWORD=" .env 2>/dev/null || echo "")
-          
-          if [ -z "$TEST_PWD_LINE" ] || [ -z "$ADMIN_PWD_LINE" ]; then
-            echo "❌ ERROR: Passwords were not retrieved from Secrets Manager"
-            echo "The pipeline should have created passwords and stored them in: ${STACK_NAME}/UserPasswords"
-            echo ""
-            echo "Current .env file contents (passwords redacted):"
-            grep -E "^(TEST_USER|ADMIN_USER)" .env | sed 's/=.*/=***REDACTED***/' || echo "  No password lines found"
-            exit 1
-          fi
-          
-          # Extract password values (everything after =)
-          TEST_PWD_VALUE=$(echo "$TEST_PWD_LINE" | cut -d'=' -f2-)
-          ADMIN_PWD_VALUE=$(echo "$ADMIN_PWD_LINE" | cut -d'=' -f2-)
-          
-          if [ -z "$TEST_PWD_VALUE" ] || [ "$TEST_PWD_VALUE" = "" ]; then
-            echo "❌ ERROR: TEST_USER_PASSWORD is empty in .env file"
-            exit 1
-          fi
-          
-          if [ -z "$ADMIN_PWD_VALUE" ] || [ "$ADMIN_PWD_VALUE" = "" ]; then
-            echo "❌ ERROR: ADMIN_USER_PASSWORD is empty in .env file"
-            exit 1
-          fi
-          
-          echo "✅ Passwords retrieved from Secrets Manager"
-          echo "  Test user password length: ${#TEST_PWD_VALUE} characters"
-          echo "  Admin user password length: ${#ADMIN_PWD_VALUE} characters"
-          
-          # Verify passwords don't contain newlines or other problematic characters
-          if echo "$TEST_PWD_VALUE" | grep -q $'\n'; then
-            echo "⚠️  Warning: TEST_USER_PASSWORD contains newlines, which may cause issues"
-          fi
-          if echo "$ADMIN_PWD_VALUE" | grep -q $'\n'; then
-            echo "⚠️  Warning: ADMIN_USER_PASSWORD contains newlines, which may cause issues"
-          fi
+          ./scripts/configure-test-environment.sh "$STACK_NAME" "$REGION" "default"
 
       - name: Run UI Tests
         working-directory: ./tests/ui

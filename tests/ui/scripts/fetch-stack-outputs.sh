@@ -129,11 +129,27 @@ update_env_var() {
 [ -n "$PROFILE" ] && update_env_var "AWS_PROFILE" "$PROFILE"
 
 # Extract passwords - prioritize Secrets Manager (where pipeline stores them), then fallback to stack outputs
-# Check if passwords are already set in .env
+# Check if passwords are already set in .env (and not placeholders)
 TEST_PASSWORD_EXISTS=$(grep -q "^TEST_USER_PASSWORD=" "${ENV_PATH}" 2>/dev/null && echo "yes" || echo "no")
 ADMIN_PASSWORD_EXISTS=$(grep -q "^ADMIN_USER_PASSWORD=" "${ENV_PATH}" 2>/dev/null && echo "yes" || echo "no")
 
+# Check if existing passwords are placeholders
+if [ "$TEST_PASSWORD_EXISTS" = "yes" ]; then
+  TEST_PWD_VALUE=$(grep "^TEST_USER_PASSWORD=" "${ENV_PATH}" 2>/dev/null | cut -d'=' -f2- | tr -d '\n\r' || echo "")
+  if [ "$TEST_PWD_VALUE" = "your-test-user-password" ] || [ -z "$TEST_PWD_VALUE" ]; then
+    TEST_PASSWORD_EXISTS="no"  # Treat placeholder as missing
+  fi
+fi
+
+if [ "$ADMIN_PASSWORD_EXISTS" = "yes" ]; then
+  ADMIN_PWD_VALUE=$(grep "^ADMIN_USER_PASSWORD=" "${ENV_PATH}" 2>/dev/null | cut -d'=' -f2- | tr -d '\n\r' || echo "")
+  if [ "$ADMIN_PWD_VALUE" = "your-admin-user-password" ] || [ -z "$ADMIN_PWD_VALUE" ]; then
+    ADMIN_PASSWORD_EXISTS="no"  # Treat placeholder as missing
+  fi
+fi
+
 # Primary source: Secrets Manager (where the pipeline stores passwords)
+# Always try to fetch from Secrets Manager if passwords are missing or are placeholders
 if [ "$TEST_PASSWORD_EXISTS" = "no" ] || [ "$ADMIN_PASSWORD_EXISTS" = "no" ]; then
   SECRET_NAME="${STACK_NAME}/UserPasswords"
   
@@ -171,7 +187,7 @@ if [ "$TEST_PASSWORD_EXISTS" = "no" ] || [ "$ADMIN_PASSWORD_EXISTS" = "no" ]; th
   
   if [ -n "$SECRET_PASSWORDS_JSON" ] && [ "$SECRET_PASSWORDS_JSON" != "null" ] && [ "$SECRET_PASSWORDS_JSON" != "None" ]; then
     if [ "$TEST_PASSWORD_EXISTS" = "no" ] && [ -n "$TEST_USERNAME" ]; then
-      TEST_USER_PASSWORD=$(echo "$SECRET_PASSWORDS_JSON" | jq -r ".[\"$TEST_USERNAME\"]" 2>/dev/null || echo "")
+      TEST_USER_PASSWORD=$(echo "$SECRET_PASSWORDS_JSON" | jq -r ".[\"$TEST_USERNAME\"]" 2>/dev/null | tr -d '\n\r' || echo "")
       if [ -n "$TEST_USER_PASSWORD" ] && [ "$TEST_USER_PASSWORD" != "null" ] && [ "$TEST_USER_PASSWORD" != "" ]; then
         update_env_var "TEST_USER_PASSWORD" "$TEST_USER_PASSWORD"
         echo "  ✅ Extracted TEST_USER_PASSWORD from Secrets Manager for user: $TEST_USERNAME"
@@ -183,7 +199,7 @@ if [ "$TEST_PASSWORD_EXISTS" = "no" ] || [ "$ADMIN_PASSWORD_EXISTS" = "no" ]; th
     fi
     
     if [ "$ADMIN_PASSWORD_EXISTS" = "no" ] && [ -n "$ADMIN_USERNAME" ]; then
-      ADMIN_USER_PASSWORD=$(echo "$SECRET_PASSWORDS_JSON" | jq -r ".[\"$ADMIN_USERNAME\"]" 2>/dev/null || echo "")
+      ADMIN_USER_PASSWORD=$(echo "$SECRET_PASSWORDS_JSON" | jq -r ".[\"$ADMIN_USERNAME\"]" 2>/dev/null | tr -d '\n\r' || echo "")
       if [ -n "$ADMIN_USER_PASSWORD" ] && [ "$ADMIN_USER_PASSWORD" != "null" ] && [ "$ADMIN_USER_PASSWORD" != "" ]; then
         update_env_var "ADMIN_USER_PASSWORD" "$ADMIN_USER_PASSWORD"
         echo "  ✅ Extracted ADMIN_USER_PASSWORD from Secrets Manager for user: $ADMIN_USERNAME"
@@ -207,7 +223,7 @@ fi
     if [ -n "$USER_PASSWORDS_JSON" ] && [ "$USER_PASSWORDS_JSON" != "null" ] && [ "$USER_PASSWORDS_JSON" != "None" ]; then
       # Extract passwords from stack outputs (legacy support)
       if [ "$TEST_PASSWORD_EXISTS" = "no" ] && [ -n "$TEST_USERNAME" ]; then
-        TEST_USER_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r ".[\"$TEST_USERNAME\"]" 2>/dev/null || echo "")
+        TEST_USER_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r ".[\"$TEST_USERNAME\"]" 2>/dev/null | tr -d '\n\r' || echo "")
         if [ -n "$TEST_USER_PASSWORD" ] && [ "$TEST_USER_PASSWORD" != "null" ]; then
           update_env_var "TEST_USER_PASSWORD" "$TEST_USER_PASSWORD"
           echo "  Extracted TEST_USER_PASSWORD from stack outputs (legacy)"
@@ -215,7 +231,7 @@ fi
       fi
       
       if [ "$ADMIN_PASSWORD_EXISTS" = "no" ] && [ -n "$ADMIN_USERNAME" ]; then
-        ADMIN_USER_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r ".[\"$ADMIN_USERNAME\"]" 2>/dev/null || echo "")
+        ADMIN_USER_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r ".[\"$ADMIN_USERNAME\"]" 2>/dev/null | tr -d '\n\r' || echo "")
         if [ -n "$ADMIN_USER_PASSWORD" ] && [ "$ADMIN_USER_PASSWORD" != "null" ]; then
           update_env_var "ADMIN_USER_PASSWORD" "$ADMIN_USER_PASSWORD"
           echo "  Extracted ADMIN_USER_PASSWORD from stack outputs (legacy)"
