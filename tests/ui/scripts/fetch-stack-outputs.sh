@@ -96,11 +96,14 @@ update_env_var() {
   local temp_file=$(mktemp)
   local key_found=false
   
+  # Trim newlines and carriage returns from value to prevent issues
+  value=$(echo -n "$value" | tr -d '\n\r')
+  
   # Read the existing .env file line by line and update or add the variable
   while IFS= read -r line || [ -n "$line" ]; do
     # Check if this line is the variable we're updating
     if [[ "$line" =~ ^${key}= ]]; then
-      # Update the existing line
+      # Update the existing line (use printf to avoid adding extra newlines)
       printf '%s=%s\n' "${key}" "${value}" >> "${temp_file}"
       key_found=true
     else

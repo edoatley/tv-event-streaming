@@ -30,12 +30,12 @@ if [ -n "${PROFILE}" ]; then
 fi
 echo ""
 
-# Read required values from .env
-TEST_SCRIPT_CLIENT_ID=$(grep "^TEST_SCRIPT_USER_POOL_CLIENT_ID=" "${ENV_PATH}" 2>/dev/null | cut -d'=' -f2- || echo "")
-TEST_USERNAME=$(grep "^TEST_USER_EMAIL=" "${ENV_PATH}" 2>/dev/null | cut -d'=' -f2- || echo "")
-ADMIN_USERNAME=$(grep "^ADMIN_USER_EMAIL=" "${ENV_PATH}" 2>/dev/null | cut -d'=' -f2- || echo "")
-TEST_PASSWORD=$(grep "^TEST_USER_PASSWORD=" "${ENV_PATH}" 2>/dev/null | cut -d'=' -f2- || echo "")
-ADMIN_PASSWORD=$(grep "^ADMIN_USER_PASSWORD=" "${ENV_PATH}" 2>/dev/null | cut -d'=' -f2- || echo "")
+# Read required values from .env and trim newlines from passwords
+TEST_SCRIPT_CLIENT_ID=$(grep "^TEST_SCRIPT_USER_POOL_CLIENT_ID=" "${ENV_PATH}" 2>/dev/null | cut -d'=' -f2- | tr -d '\n\r' || echo "")
+TEST_USERNAME=$(grep "^TEST_USER_EMAIL=" "${ENV_PATH}" 2>/dev/null | cut -d'=' -f2- | tr -d '\n\r' || echo "")
+ADMIN_USERNAME=$(grep "^ADMIN_USER_EMAIL=" "${ENV_PATH}" 2>/dev/null | cut -d'=' -f2- | tr -d '\n\r' || echo "")
+TEST_PASSWORD=$(grep "^TEST_USER_PASSWORD=" "${ENV_PATH}" 2>/dev/null | cut -d'=' -f2- | tr -d '\n\r' || echo "")
+ADMIN_PASSWORD=$(grep "^ADMIN_USER_PASSWORD=" "${ENV_PATH}" 2>/dev/null | cut -d'=' -f2- | tr -d '\n\r' || echo "")
 
 # Validate required values are present
 if [ -z "$TEST_SCRIPT_CLIENT_ID" ]; then

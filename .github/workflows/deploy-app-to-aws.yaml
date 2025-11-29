@@ -206,9 +206,22 @@ jobs:
         working-directory: ./tests/ui
         run: npm ci
 
+      - name: Cache Playwright Browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('tests/ui/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
       - name: Install Playwright Browsers
         working-directory: ./tests/ui
-        run: npx playwright install --with-deps
+        # Install only chromium for faster CI runs (~50% faster than installing all browsers)
+        # Use --with-deps to install system dependencies required by browsers
+        # Cache will restore browsers from previous runs, making this step very fast
+        run: npx playwright install chromium --with-deps
 
       - name: Configure Test Environment
         working-directory: ./tests/ui
