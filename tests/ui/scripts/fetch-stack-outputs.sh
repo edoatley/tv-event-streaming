@@ -223,7 +223,6 @@ fi
       fi
     fi
   fi
-fi
 
 echo "✅ .env file updated successfully!"
 echo ""
