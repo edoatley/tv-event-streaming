@@ -26,12 +26,6 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       StageName: !Ref StageName
-      # Domain configuration removed - custom domains not currently used
-      # To enable custom domain, uncomment and provide ApiDomainName and ApiCertificateArn:
-      Domain:
-        SecurityPolicy: TLS_1_2
-      #   DomainName: !Ref ApiDomainName
-      #   CertificateArn: !Ref ApiCertificateArn
       Auth:
         DefaultAuthorizer: CognitoAuthorizer
         Authorizers:
