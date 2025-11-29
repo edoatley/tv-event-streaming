@@ -77,6 +77,8 @@ Resources:
                   - scheduler:*
                   # For managing EventBridge triggers
                   - events:*
+                  # For creating and managing KMS keys for encryption (e.g., Kinesis stream encryption)
+                  - kms:*
                 Resource: "*"
               # Restricted S3 permissions for SAM deployment bucket only
               - Effect: Allow
