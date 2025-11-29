@@ -20,10 +20,9 @@ Parameters:
     Type: String
     Description: "The username for the pre-created admin user."
     Default: "admin.user@example.com"
-  WatchModeApiKey:
+  WatchModeApiKeySecretArn:
     Type: String
-    NoEcho: true
-    Description: "The API key for WatchMode API (will be stored in Secrets Manager)"
+    Description: "The ARN of the existing secret in Secrets Manager containing the WatchMode API key"
   WatchModeHostname:
     Type: String
     Description: "The Hostname for WatchMode API"
@@ -33,13 +32,6 @@ Conditions:
   ShouldCreateDataStream: !Equals [ !Ref CreateDataStream, "true" ]
 
 Resources:
-  WatchModeApiKeySecret:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      Name: !Sub "${AWS::StackName}/WatchModeApiKey"
-      Description: API key for WatchMode API
-      SecretString: !Ref WatchModeApiKey
-
   ProgrammesTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -136,7 +128,7 @@ Resources:
       Parameters:
         ProgramDataTableName: !Ref ProgrammesTable
         ProgramDataTableArn: !GetAtt ProgrammesTable.Arn
-        WatchModeApiKeySecretArn: !Ref WatchModeApiKeySecret
+        WatchModeApiKeySecretArn: !Ref WatchModeApiKeySecretArn
         WatchModeHostname: !Ref WatchModeHostname
 
   TitleEnrichmentApp:
@@ -146,7 +138,7 @@ Resources:
       Parameters:
         ProgramDataTableName: !Ref ProgrammesTable
         ProgrammesTableStreamArn: !GetAtt ProgrammesTable.StreamArn
-        WatchModeApiKeySecretArn: !Ref WatchModeApiKeySecret
+        WatchModeApiKeySecretArn: !Ref WatchModeApiKeySecretArn
         WatchModeHostname: !Ref WatchModeHostname
 
   TitleRecommendationsConsumerApp:
@@ -175,7 +167,7 @@ Resources:
       Parameters:
         ProgramDataTableName: !Ref ProgrammesTable
         ProgramDataTableArn: !GetAtt ProgrammesTable.Arn
-        WatchModeApiKeySecretArn: !Ref WatchModeApiKeySecret
+        WatchModeApiKeySecretArn: !Ref WatchModeApiKeySecretArn
         WatchModeHostname: !Ref WatchModeHostname
         ProgrammeDataStreamName: !If [ShouldCreateDataStream, !Ref ProgrammeDataStream, ""]
         ProgrammeDataStreamArn: !If [ShouldCreateDataStream, !GetAtt ProgrammeDataStream.Arn, ""]

@@ -1,0 +1,104 @@
+version: 2
+updates:
+  # Python dependencies for Lambda functions
+  - package-ecosystem: "pip"
+    directory: "/src/add_cognito_user"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "python"
+      - "security"
+
+  - package-ecosystem: "pip"
+    directory: "/src/admin_lambda"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "python"
+      - "security"
+
+  - package-ecosystem: "pip"
+    directory: "/src/periodic_reference_data"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "python"
+      - "security"
+
+  - package-ecosystem: "pip"
+    directory: "/src/title_enrichment"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "python"
+      - "security"
+
+  - package-ecosystem: "pip"
+    directory: "/src/title_recommendations_consumer"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "python"
+      - "security"
+
+  - package-ecosystem: "pip"
+    directory: "/src/user_preferences"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "python"
+      - "security"
+
+  - package-ecosystem: "pip"
+    directory: "/src/userprefs_title_ingestion"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "python"
+      - "security"
+
+  # Node.js dependencies for UI tests
+  - package-ecosystem: "npm"
+    directory: "/tests/ui"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "javascript"
+      - "security"
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "security"
+

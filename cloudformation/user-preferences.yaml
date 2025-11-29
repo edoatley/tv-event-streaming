@@ -18,6 +18,16 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       StageName: Prod
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          ThrottlingBurstLimit: 100
+          ThrottlingRateLimit: 50
+        # Stricter limits for write operations
+        - ResourcePath: '/preferences'
+          HttpMethod: PUT
+          ThrottlingBurstLimit: 50
+          ThrottlingRateLimit: 25
       DefinitionBody:
         openapi: "3.0.1"
         info:

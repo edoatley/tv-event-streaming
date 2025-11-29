@@ -82,7 +82,7 @@ echo "🚀 Step 3: Building the application with SAM..."
 sam build --use-container
 
 ########################################################################################################################
-echo "🚀 Step 4: Deploying changes to the stack '$STACK_NAME'..."
+echo "🚀 Step 4: Creating or updating WatchMode API Key Secret..."
 ########################################################################################################################
 if [ -z "$WATCHMODE_API_KEY" ]; then
     echo "❌ Error: WATCHMODE_API_KEY environment variable is not set."
@@ -90,42 +90,99 @@ if [ -z "$WATCHMODE_API_KEY" ]; then
     exit 1
 fi
 
+SECRET_NAME="${STACK_NAME}/WatchModeApiKey"
+
+# Check if secret exists
+if aws secretsmanager describe-secret --secret-id "$SECRET_NAME" --profile "$PROFILE" --region "$REGION" >/dev/null 2>&1; then
+    echo "📝 Updating existing secret: $SECRET_NAME"
+    aws secretsmanager update-secret \
+        --secret-id "$SECRET_NAME" \
+        --secret-string "$WATCHMODE_API_KEY" \
+        --profile "$PROFILE" \
+        --region "$REGION"
+else
+    echo "📝 Creating new secret: $SECRET_NAME"
+    aws secretsmanager create-secret \
+        --name "$SECRET_NAME" \
+        --description "WatchMode API key for stack $STACK_NAME" \
+        --secret-string "$WATCHMODE_API_KEY" \
+        --profile "$PROFILE" \
+        --region "$REGION"
+fi
+
+# Get the secret ARN
+WATCHMODE_SECRET_ARN=$(aws secretsmanager describe-secret --secret-id "$SECRET_NAME" --profile "$PROFILE" --region "$REGION" --query "ARN" --output text)
+echo "✅ Secret created/updated: $WATCHMODE_SECRET_ARN"
+
+########################################################################################################################
+echo "🚀 Step 5: Deploying changes to the stack '$STACK_NAME'..."
+########################################################################################################################
 sam deploy \
     --stack-name "$STACK_NAME" \
     --profile "$PROFILE" \
     --region "$REGION" \
     --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
-    --parameter-overrides "CreateDataStream=true" "WatchModeApiKey=${WATCHMODE_API_KEY}" \
+    --parameter-overrides "CreateDataStream=true" "WatchModeApiKeySecretArn=${WATCHMODE_SECRET_ARN}" \
     "${SAM_DEPLOY_ARGS[@]}"
 
 echo "✅ Deployment complete. Your changes are now live."
 
 ########################################################################################################################
-echo "🚀 Step 5: Setting passwords for Cognito users..."
+echo "🚀 Step 6: Setting passwords for Cognito users..."
 ########################################################################################################################
-echo "🏃 Running password setting script..."
-./resources/scripts/set-cognito-password.sh "$STACK_NAME" "$PROFILE" "$REGION"
-echo "✅ Passwords set."
+# Get password from environment variable or Secrets Manager
+USER_PASSWORD="${PASSWORD:-}"
+if [ -z "$USER_PASSWORD" ]; then
+    echo "🔐 Attempting to fetch password from Secrets Manager..."
+    SECRET_NAME="${STACK_NAME}/UserPasswords"
+    if aws secretsmanager describe-secret --secret-id "$SECRET_NAME" --profile "$PROFILE" --region "$REGION" >/dev/null 2>&1; then
+        echo "Found secret in Secrets Manager, retrieving password..."
+        USER_PASSWORDS_JSON=$(aws secretsmanager get-secret-value \
+            --secret-id "$SECRET_NAME" \
+            --profile "$PROFILE" \
+            --region "$REGION" \
+            --query "SecretString" \
+            --output text)
+        
+        if [ -n "$USER_PASSWORDS_JSON" ] && [ "$USER_PASSWORDS_JSON" != "None" ]; then
+            # Get the first password from the JSON (for setting both users to same password)
+            USER_PASSWORD=$(echo "$USER_PASSWORDS_JSON" | jq -r 'to_entries[0].value // empty')
+            if [ -z "$USER_PASSWORD" ] || [ "$USER_PASSWORD" == "null" ]; then
+                echo "⚠️  Warning: Could not extract password from Secrets Manager"
+            fi
+        fi
+    fi
+fi
+
+if [ -z "$USER_PASSWORD" ]; then
+    echo "⚠️  Warning: Password not set via PASSWORD environment variable or Secrets Manager."
+    echo "Skipping password setting. Users may need to reset passwords manually."
+else
+    echo "🏃 Running password setting script..."
+    ./scripts/deploy/set-cognito-password.sh "$USER_PASSWORD" "$STACK_NAME" "$PROFILE" "$REGION"
+    echo "✅ Passwords set."
+fi
 
 # Fetch outputs to display to the user
 WEBSITE_URL=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Outputs[?OutputKey=='WebsiteUrl'].OutputValue" --output text --profile "$PROFILE" --region "$REGION")
 TEST_USERNAME=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Outputs[?OutputKey=='TestUsername'].OutputValue" --output text --profile "$PROFILE" --region "$REGION")
 ADMIN_USERNAME=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Outputs[?OutputKey=='AdminUsername'].OutputValue" --output text --profile "$PROFILE" --region "$REGION")
 
-# The password is hardcoded in the set-cognito-password.sh script
-USER_PASSWORD="A-Strong-P@ssw0rd1"
-
 echo ""
-echo "🎉 You can now log in to the application with the following credentials:"
+echo "🎉 Deployment complete! You can now log in to the application:"
 echo "--------------------------------------------------"
 echo "Website URL:  $WEBSITE_URL"
 echo "Test User:    $TEST_USERNAME"
 echo "Admin User:   $ADMIN_USERNAME"
-echo "Password:     $USER_PASSWORD"
+if [ -n "$USER_PASSWORD" ]; then
+    echo "Password:     [Set via Secrets Manager or PASSWORD env var]"
+else
+    echo "Password:     [Not set - check Secrets Manager or set PASSWORD env var]"
+fi
 echo "--------------------------------------------------"
 
 ########################################################################################################################
-echo "↔ Step 6: Updating website configuration and syncing to S3..."
+echo "↔ Step 7: Updating website configuration and syncing to S3..."
 ########################################################################################################################
 echo "🏃 Running website configuration script..."
 # This script generates the config file and syncs all web assets to S3.
@@ -133,7 +190,7 @@ echo "🏃 Running website configuration script..."
 echo "✅ Website configuration and sync complete."
 
 ########################################################################################################################
-echo "🧹 Step 7: Clearing the CloudFront cache..."
+echo "🧹 Step 8: Clearing the CloudFront cache..."
 ########################################################################################################################
 DISTRIBUTION_ID=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Outputs[?OutputKey=='WebsiteDistributionId'].OutputValue" --output text --profile "$PROFILE" --region "$REGION")
 if [ -z "$DISTRIBUTION_ID" ]; then

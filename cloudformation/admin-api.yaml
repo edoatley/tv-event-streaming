@@ -53,6 +53,8 @@ Resources:
           LoggingLevel: INFO
           DataTraceEnabled: true
           MetricsEnabled: true
+          ThrottlingBurstLimit: 20
+          ThrottlingRateLimit: 10
 
   AdminApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
@@ -153,7 +155,7 @@ Resources:
       FunctionName: !Sub "${RootStackName}-AdminLambda"
       CodeUri: ../src/admin_lambda/
       Handler: admin_lambda.lambda_handler
-      Runtime: python3.11
+      Runtime: python3.12
       MemorySize: 256
       Timeout: 30
       Role: !GetAtt AdminLambdaExecutionRole.Arn

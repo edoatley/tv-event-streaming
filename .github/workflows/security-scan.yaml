@@ -1,0 +1,172 @@
+name: Security Scanning
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - feature/*
+  pull_request:
+    branches:
+      - main
+      - develop
+  schedule:
+    # Run weekly on Mondays at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  python-sca:
+    name: Python SCA Scanning
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        lambda-dir:
+          - src/add_cognito_user
+          - src/admin_lambda
+          - src/periodic_reference_data
+          - src/title_enrichment
+          - src/title_recommendations_consumer
+          - src/user_preferences
+          - src/userprefs_title_ingestion
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Safety
+        run: pip install safety
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.lambda-dir }}
+        run: |
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+
+      - name: Run Safety check
+        working-directory: ${{ matrix.lambda-dir }}
+        run: |
+          if [ -f requirements.txt ]; then
+            safety check --file requirements.txt --json --output safety-report.json || true
+            if [ -f safety-report.json ]; then
+              echo "## Safety Scan Results for ${{ matrix.lambda-dir }}" >> $GITHUB_STEP_SUMMARY
+              cat safety-report.json | jq -r '.vulnerabilities[]? | "- **\(.package_name)**: \(.vulnerable_spec) - \(.advisory)"' >> $GITHUB_STEP_SUMMARY || echo "No vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+            fi
+            safety check --file requirements.txt
+          else
+            echo "No requirements.txt found in ${{ matrix.lambda-dir }}"
+          fi
+        continue-on-error: true
+
+      - name: Upload Safety report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: safety-report-${{ matrix.lambda-dir }}
+          path: ${{ matrix.lambda-dir }}/safety-report.json
+          if-no-files-found: ignore
+
+  nodejs-sca:
+    name: Node.js SCA Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        working-directory: ./tests/ui
+        run: npm ci
+
+      - name: Run npm audit
+        working-directory: ./tests/ui
+        run: |
+          npm audit --json > npm-audit-report.json || true
+          npm audit --audit-level=moderate
+        continue-on-error: true
+
+      - name: Upload npm audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: tests/ui/npm-audit-report.json
+          if-no-files-found: ignore
+
+      - name: Generate audit summary
+        working-directory: ./tests/ui
+        run: |
+          echo "## npm Audit Results" >> $GITHUB_STEP_SUMMARY
+          if [ -f npm-audit-report.json ]; then
+            VULNS=$(jq -r '.metadata.vulnerabilities | to_entries[] | "\(.key): \(.value)"' npm-audit-report.json 2>/dev/null || echo "Unable to parse")
+            echo "$VULNS" >> $GITHUB_STEP_SUMMARY || echo "No vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  trivy-scan:
+    name: Trivy Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          exit-code: '0'
+          skip-dirs: 'node_modules'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Generate Trivy summary
+        run: |
+          echo "## Trivy Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          if [ -f trivy-results.sarif ]; then
+            echo "Scan completed. Results uploaded to GitHub Security tab." >> $GITHUB_STEP_SUMMARY
+          fi
+
+  infrastructure-scan:
+    name: Infrastructure Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Run Trivy on CloudFormation templates
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: '.'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+          config-policy: 'cloudformation'
+
+      - name: Generate infrastructure scan summary
+        run: |
+          echo "## Infrastructure Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "CloudFormation templates scanned for security misconfigurations." >> $GITHUB_STEP_SUMMARY
+
+
+
+

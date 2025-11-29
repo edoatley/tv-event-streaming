@@ -32,6 +32,34 @@ Resources:
           LoggingLevel: INFO
           DataTraceEnabled: true
           MetricsEnabled: true
+          ThrottlingBurstLimit: 200
+          ThrottlingRateLimit: 100
+        # Stricter limits for authenticated endpoints
+        - ResourcePath: '/titles'
+          HttpMethod: GET
+          ThrottlingBurstLimit: 100
+          ThrottlingRateLimit: 50
+        - ResourcePath: '/recommendations'
+          HttpMethod: GET
+          ThrottlingBurstLimit: 100
+          ThrottlingRateLimit: 50
+        - ResourcePath: '/preferences'
+          HttpMethod: GET
+          ThrottlingBurstLimit: 100
+          ThrottlingRateLimit: 50
+        - ResourcePath: '/preferences'
+          HttpMethod: PUT
+          ThrottlingBurstLimit: 50
+          ThrottlingRateLimit: 25
+        # More lenient for public endpoints
+        - ResourcePath: '/sources'
+          HttpMethod: GET
+          ThrottlingBurstLimit: 200
+          ThrottlingRateLimit: 100
+        - ResourcePath: '/genres'
+          HttpMethod: GET
+          ThrottlingBurstLimit: 200
+          ThrottlingRateLimit: 100
 
   WebApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
