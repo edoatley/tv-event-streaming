@@ -29,7 +29,7 @@ Parameters:
     Default: "https://api.watchmode.com"
   WafWebAclId:
     Type: String
-    Description: "Optional WAF WebACL ID to associate with CloudFront distribution (if not provided, a default WebACL will be created)"
+    Description: "Optional WAF WebACL ID to associate with CloudFront distribution. Note: WAFv2 WebACLs for CloudFront must be created in us-east-1 region. If not provided, no WAF will be associated (WAF creation in this stack is disabled due to regional requirements)."
     Default: ""
 
 Conditions:
@@ -157,42 +157,8 @@ Resources:
             Action: s3:GetObject
             Resource: !Sub "arn:aws:s3:::${WebsiteBucket}/*"
 
-  CloudFrontWebACL:
-    Type: AWS::WAFv2::WebACL
-    Properties:
-      Name: !Sub "${AWS::StackName}-cloudfront-waf"
-      Scope: CLOUDFRONT
-      DefaultAction:
-        Allow: {}
-      Rules:
-        - Name: AWSManagedRulesCommonRuleSet
-          Priority: 1
-          Statement:
-            ManagedRuleGroupStatement:
-              VendorName: AWS
-              Name: AWSManagedRulesCommonRuleSet
-          OverrideAction:
-            None: {}
-          VisibilityConfig:
-            SampledRequestsEnabled: true
-            CloudWatchMetricsEnabled: true
-            MetricName: CommonRuleSetMetric
-        - Name: AWSManagedRulesKnownBadInputsRuleSet
-          Priority: 2
-          Statement:
-            ManagedRuleGroupStatement:
-              VendorName: AWS
-              Name: AWSManagedRulesKnownBadInputsRuleSet
-          OverrideAction:
-            None: {}
-          VisibilityConfig:
-            SampledRequestsEnabled: true
-            CloudWatchMetricsEnabled: true
-            MetricName: KnownBadInputsRuleSetMetric
-      VisibilityConfig:
-        SampledRequestsEnabled: true
-        CloudWatchMetricsEnabled: true
-        MetricName: !Sub "${AWS::StackName}-CloudFrontWAF"
+  # Note: CloudFrontWebACL resource removed because WAFv2 for CloudFront must be created in us-east-1,
+  # but this stack deploys to eu-west-2. To use WAF, create it manually in us-east-1 and pass the ID via WafWebAclId parameter.
 
   WebsiteDistribution:
     Type: AWS::CloudFront::Distribution
@@ -220,7 +186,8 @@ Resources:
         ViewerCertificate:
           CloudFrontDefaultCertificate: true
           MinimumProtocolVersion: TLSv1.2_2021
-        WebACLId: !If [HasWafWebAcl, !Ref WafWebAclId, !Ref CloudFrontWebACL]
+        # Only associate WAF if WafWebAclId is provided (WAF must be created in us-east-1 separately)
+        WebACLId: !If [HasWafWebAcl, !Ref WafWebAclId, !Ref "AWS::NoValue"]
 
   # --- Nested Applications ---
   CognitoApp:

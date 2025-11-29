@@ -79,6 +79,8 @@ Resources:
                   - events:*
                   # For creating and managing KMS keys for encryption (e.g., Kinesis stream encryption)
                   - kms:*
+                  # For creating and managing WAFv2 WebACLs for CloudFront
+                  - wafv2:*
                 Resource: "*"
               # Restricted S3 permissions for SAM deployment bucket only
               - Effect: Allow

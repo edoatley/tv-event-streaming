@@ -13,10 +13,12 @@ Parameters:
     Type: String
   ApiDomainName:
     Type: String
-    Description: "Custom domain name for the API (required for explicit TLS configuration via Domain SecurityPolicy)"
+    Default: ""
+    Description: "Custom domain name for the API (optional - if not provided, API will use default execute-api domain)"
   ApiCertificateArn:
     Type: String
-    Description: "ACM certificate ARN for the custom domain (required for explicit TLS configuration)"
+    Default: ""
+    Description: "ACM certificate ARN for the custom domain (optional - required only if ApiDomainName is provided)"
 
 Resources:
   # The API Gateway, with the OpenAPI spec now inlined for validation.
@@ -24,11 +26,12 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       StageName: Prod
-      # Explicitly configure minimum TLS version to TLS 1.2 via Domain SecurityPolicy
-      Domain:
-        SecurityPolicy: TLS_1_2
-        DomainName: !Ref ApiDomainName
-        CertificateArn: !Ref ApiCertificateArn
+      # Domain configuration removed - custom domains not currently used
+      # To enable custom domain, uncomment and provide ApiDomainName and ApiCertificateArn:
+      # Domain:
+      #   SecurityPolicy: TLS_1_2
+      #   DomainName: !Ref ApiDomainName
+      #   CertificateArn: !Ref ApiCertificateArn
       MethodSettings:
         - ResourcePath: '/*'
           HttpMethod: '*'
