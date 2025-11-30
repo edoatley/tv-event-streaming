@@ -17,7 +17,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 1
 
@@ -188,7 +188,7 @@ jobs:
       STACK_NAME: tv-event-streaming-gha
       REGION: eu-west-2
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 1
 
