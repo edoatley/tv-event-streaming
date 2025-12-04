@@ -63,6 +63,7 @@ Resources:
           MetricsEnabled: true
           ThrottlingBurstLimit: 20
           ThrottlingRateLimit: 10
+          CacheDataEncrypted: true
 
   AdminApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
@@ -75,6 +76,7 @@ Resources:
     Properties:
       Handler: index.handler
       Runtime: python3.12
+      Tracing: Active
       InlineCode: |
         import json
         def handler(event, context):
@@ -156,6 +158,17 @@ Resources:
                   - logs:DescribeLogStreams
                   - logs:GetLogEvents
                 Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*"
+        - PolicyName: AdminLambdaXRayAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                  - xray:GetSamplingRules
+                  - xray:GetSamplingTargets
+                Resource: "*"
 
   AdminLambdaFunction:
     Type: AWS::Serverless::Function
@@ -166,6 +179,7 @@ Resources:
       Runtime: python3.12
       MemorySize: 256
       Timeout: 30
+      Tracing: Active
       Role: !GetAtt AdminLambdaExecutionRole.Arn
       Environment:
         Variables:

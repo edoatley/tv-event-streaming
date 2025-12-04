@@ -50,6 +50,13 @@ Resources:
                 Action:
                   - secretsmanager:GetSecretValue
                 Resource: !Ref WatchModeApiKeySecretArn
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                  - xray:GetSamplingRules
+                  - xray:GetSamplingTargets
+                Resource: "*"
 
   TitleEnrichmentFunction:
     Type: AWS::Serverless::Function
@@ -61,6 +68,7 @@ Resources:
       Description: Consumes DynamoDB stream events to enrich title records.
       MemorySize: 256
       Timeout: 60
+      Tracing: Active
       Role: !GetAtt TitleEnrichmentLambdaRole.Arn
       Events:
         Stream:

@@ -31,11 +31,13 @@ Resources:
           HttpMethod: '*'
           ThrottlingBurstLimit: 100
           ThrottlingRateLimit: 50
+          CacheDataEncrypted: true
         # Stricter limits for write operations
         - ResourcePath: '/preferences'
           HttpMethod: PUT
           ThrottlingBurstLimit: 50
           ThrottlingRateLimit: 25
+          CacheDataEncrypted: true
       DefinitionBody:
         openapi: "3.0.1"
         info:
@@ -166,6 +168,7 @@ Resources:
       CodeUri: ../src/user_preferences/
       MemorySize: 256
       Timeout: 30
+      Tracing: Active
       Policies:
         - Statement:
             - Effect: Allow
@@ -174,6 +177,13 @@ Resources:
                 - dynamodb:Scan
                 - dynamodb:BatchWriteItem
               Resource: !Ref ProgramDataTableArn
+            - Effect: Allow
+              Action:
+                - xray:PutTraceSegments
+                - xray:PutTelemetryRecords
+                - xray:GetSamplingRules
+                - xray:GetSamplingTargets
+              Resource: "*"
       Environment:
         Variables:
           DYNAMODB_TABLE_NAME: !Ref ProgramDataTableName

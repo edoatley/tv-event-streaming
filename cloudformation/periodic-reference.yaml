@@ -47,6 +47,13 @@ Resources:
                 Action:
                   - secretsmanager:GetSecretValue
                 Resource: !Ref WatchModeApiKeySecretArn
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                  - xray:GetSamplingRules
+                  - xray:GetSamplingTargets
+                Resource: "*"
   PeriodicReferenceFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -57,6 +64,7 @@ Resources:
       Description: Periodically fetches TV reference data from WatchMode API and saves it to DynamoDB.
       MemorySize: 256
       Timeout: 60 # Adjusted timeout, 300 might be excessive for this
+      Tracing: Active
       Role: !GetAtt ReferenceDataLambdaRole.Arn
       Events:
         ScheduledTrigger:

@@ -55,6 +55,13 @@ Resources:
                 Action:
                   - secretsmanager:GetSecretValue
                 Resource: !Ref WatchModeApiKeySecretArn
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                  - xray:GetSamplingRules
+                  - xray:GetSamplingTargets
+                Resource: "*"
 
   UserPrefsTitleIngestionFunction:
     Type: AWS::Serverless::Function
@@ -66,6 +73,7 @@ Resources:
       Description: Periodically fetches TV data from an external API and sends it to Kinesis.
       MemorySize: 256
       Timeout: 300
+      Tracing: Active
       Role: !GetAtt UserPrefsTitleIngestionLambdaRole.Arn
       Events:
         ScheduledTrigger:

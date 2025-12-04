@@ -42,19 +42,23 @@ Resources:
           MetricsEnabled: true
           ThrottlingBurstLimit: 200
           ThrottlingRateLimit: 100
+          CacheDataEncrypted: true
         # Stricter limits for authenticated endpoints
         - ResourcePath: '/titles'
           HttpMethod: GET
           ThrottlingBurstLimit: 100
           ThrottlingRateLimit: 50
+          CacheDataEncrypted: true
         - ResourcePath: '/recommendations'
           HttpMethod: GET
           ThrottlingBurstLimit: 100
           ThrottlingRateLimit: 50
+          CacheDataEncrypted: true
         - ResourcePath: '/preferences'
           HttpMethod: GET
           ThrottlingBurstLimit: 100
           ThrottlingRateLimit: 50
+          CacheDataEncrypted: true
         - ResourcePath: '/preferences'
           HttpMethod: PUT
           ThrottlingBurstLimit: 50
@@ -64,10 +68,12 @@ Resources:
           HttpMethod: GET
           ThrottlingBurstLimit: 200
           ThrottlingRateLimit: 100
+          CacheDataEncrypted: true
         - ResourcePath: '/genres'
           HttpMethod: GET
           ThrottlingBurstLimit: 200
           ThrottlingRateLimit: 100
+          CacheDataEncrypted: true
 
   WebApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
@@ -80,6 +86,7 @@ Resources:
     Properties:
       Handler: index.handler
       Runtime: python3.12
+      Tracing: Active
       # This function's only job is to return the correct CORS headers for preflight OPTIONS requests.
       InlineCode: |
         import json
@@ -111,6 +118,7 @@ Resources:
       CodeUri: ../src/web_api/
       MemorySize: 256
       Timeout: 30
+      Tracing: Active
       Policies:
         - Statement:
             - Effect: Allow
@@ -121,6 +129,13 @@ Resources:
                 - dynamodb:BatchGetItem
                 - dynamodb:Scan
               Resource: !Ref ProgramDataTableArn
+            - Effect: Allow
+              Action:
+                - xray:PutTraceSegments
+                - xray:PutTelemetryRecords
+                - xray:GetSamplingRules
+                - xray:GetSamplingTargets
+              Resource: "*"
       Environment:
         Variables:
           DYNAMODB_TABLE_NAME: !Ref ProgramDataTableName
