@@ -46,6 +46,13 @@ Resources:
                 Action:
                   - dynamodb:BatchWriteItem
                 Resource: !Ref ProgramDataTableArn
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                  - xray:GetSamplingRules
+                  - xray:GetSamplingTargets
+                Resource: "*"
   TitleRecommendationsConsumerFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -56,6 +63,7 @@ Resources:
       Description: Consumes title recommendation events from Kinesis and logs them.
       MemorySize: 128
       Timeout: 60
+      Tracing: Active
       Role: !GetAtt TitleRecommendationsConsumerLambdaRole.Arn
       Environment:
         Variables:

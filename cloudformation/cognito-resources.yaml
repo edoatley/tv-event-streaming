@@ -103,6 +103,13 @@ Resources:
                   - cognito-idp:AdminAddUserToGroup
                   - cognito-idp:AdminDeleteUser
                 Resource: !GetAtt UserPreferencesUserPool.Arn
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                  - xray:GetSamplingRules
+                  - xray:GetSamplingTargets
+                Resource: "*"
 
   # Lambda function to create users with random passwords
   # This function can be invoked directly via AWS CLI or SDK
@@ -113,6 +120,7 @@ Resources:
       CodeUri: ../src/add_cognito_user/
       Handler: add_cognito_user.lambda_handler
       Runtime: python3.12
+      Tracing: Active
       Role: !GetAtt UserCreationLambdaRole.Arn
       Timeout: 60
 

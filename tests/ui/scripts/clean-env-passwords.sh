@@ -45,3 +45,5 @@ echo "✅ Password values cleaned in .env file"
 echo "   TEST_USER_PASSWORD length: ${#TEST_PWD} characters"
 echo "   ADMIN_USER_PASSWORD length: ${#ADMIN_PWD} characters"
 
+
+
