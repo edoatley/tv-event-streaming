@@ -4,12 +4,12 @@
 
 export const TEST_USERS = {
   regular: {
-    email: process.env.TEST_USER_EMAIL || 'test.user@example.com',
-    password: process.env.TEST_USER_PASSWORD || '',
+    email: (process.env.TEST_USER_EMAIL || 'test.user@example.com').trim(),
+    password: (process.env.TEST_USER_PASSWORD || '').trim(),
   },
   admin: {
-    email: process.env.ADMIN_USER_EMAIL || 'admin.user@example.com',
-    password: process.env.ADMIN_USER_PASSWORD || '',
+    email: (process.env.ADMIN_USER_EMAIL || 'admin.user@example.com').trim(),
+    password: (process.env.ADMIN_USER_PASSWORD || '').trim(),
   },
 };
 

@@ -43,14 +43,19 @@ export async function authenticateUser(
 ): Promise<string> {
   const client = createCognitoClient();
 
+  // Trim whitespace from username and password to prevent authentication failures
+  const trimmedUsername = username.trim();
+  const trimmedPassword = password.trim();
+  const trimmedClientId = clientId.trim();
+
   try {
     // Initiate authentication
     const initiateAuthCommand = new InitiateAuthCommand({
       AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
-      ClientId: clientId,
+      ClientId: trimmedClientId,
       AuthParameters: {
-        USERNAME: username,
-        PASSWORD: password,
+        USERNAME: trimmedUsername,
+        PASSWORD: trimmedPassword,
       },
     });
 
@@ -81,12 +86,12 @@ export async function authenticateUser(
   } catch (error: any) {
     if (error.name === 'NotAuthorizedException') {
       throw new Error(
-        `Authentication failed: Invalid username or password for user ${username}`
+        `Authentication failed: Invalid username or password for user ${trimmedUsername}`
       );
     }
     if (error.name === 'UserNotConfirmedException') {
       throw new Error(
-        `User ${username} is not confirmed. Please confirm the user in Cognito.`
+        `User ${trimmedUsername} is not confirmed. Please confirm the user in Cognito.`
       );
     }
     throw error;
