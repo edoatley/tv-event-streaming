@@ -2,6 +2,13 @@
  * Test data constants for UI tests
  */
 
+// Load environment variables first to ensure they're available
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+
+// Load .env file with override to ensure values are set
+dotenv.config({ path: path.resolve(__dirname, '../.env'), override: true });
+
 export const TEST_USERS = {
   regular: {
     email: (process.env.TEST_USER_EMAIL || 'test.user@example.com').trim(),

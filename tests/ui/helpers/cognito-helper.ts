@@ -9,7 +9,8 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 
 // Load environment variables
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+// Use override: true to ensure values from .env file override any existing env vars
+dotenv.config({ path: path.resolve(__dirname, '../.env'), override: true });
 
 const region = process.env.AWS_REGION || 'eu-west-2';
 const profile = process.env.AWS_PROFILE || 'streaming';
