@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.940.0",
-    "dotenv": "^16.4.5"
+    "dotenv": "^17.2.3"
   }
 }
 
