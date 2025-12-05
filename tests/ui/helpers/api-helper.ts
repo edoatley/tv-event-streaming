@@ -3,7 +3,8 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 
 // Load environment variables
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+// Use override: true to ensure values from .env file override any existing env vars
+dotenv.config({ path: path.resolve(__dirname, '../.env'), override: true });
 
 const BASE_URL = process.env.BASE_URL || '';
 // API_ENDPOINT can be explicitly set, otherwise will be read from page's appConfig

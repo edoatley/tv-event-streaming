@@ -24,13 +24,13 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@playwright/test": "^1.40.0",
-    "@types/node": "^20.10.0",
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^24.10.1",
     "typescript": "^5.3.0"
   },
   "dependencies": {
-    "@aws-sdk/client-cognito-identity-provider": "^3.490.0",
-    "dotenv": "^16.3.1"
+    "@aws-sdk/client-cognito-identity-provider": "^3.940.0",
+    "dotenv": "^16.4.5"
   }
 }
 

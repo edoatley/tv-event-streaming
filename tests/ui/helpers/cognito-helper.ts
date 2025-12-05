@@ -9,7 +9,8 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 
 // Load environment variables
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+// Use override: true to ensure values from .env file override any existing env vars
+dotenv.config({ path: path.resolve(__dirname, '../.env'), override: true });
 
 const region = process.env.AWS_REGION || 'eu-west-2';
 const profile = process.env.AWS_PROFILE || 'streaming';
@@ -43,14 +44,19 @@ export async function authenticateUser(
 ): Promise<string> {
   const client = createCognitoClient();
 
+  // Trim whitespace from username and password to prevent authentication failures
+  const trimmedUsername = username.trim();
+  const trimmedPassword = password.trim();
+  const trimmedClientId = clientId.trim();
+
   try {
     // Initiate authentication
     const initiateAuthCommand = new InitiateAuthCommand({
       AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
-      ClientId: clientId,
+      ClientId: trimmedClientId,
       AuthParameters: {
-        USERNAME: username,
-        PASSWORD: password,
+        USERNAME: trimmedUsername,
+        PASSWORD: trimmedPassword,
       },
     });
 
@@ -81,12 +87,12 @@ export async function authenticateUser(
   } catch (error: any) {
     if (error.name === 'NotAuthorizedException') {
       throw new Error(
-        `Authentication failed: Invalid username or password for user ${username}`
+        `Authentication failed: Invalid username or password for user ${trimmedUsername}`
       );
     }
     if (error.name === 'UserNotConfirmedException') {
       throw new Error(
-        `User ${username} is not confirmed. Please confirm the user in Cognito.`
+        `User ${trimmedUsername} is not confirmed. Please confirm the user in Cognito.`
       );
     }
     throw error;
@@ -100,10 +106,15 @@ export async function getIdToken(
   email: string,
   password: string
 ): Promise<string> {
-  const clientId =
+  // Reload environment variables to ensure we have the latest values
+  // This is important because environment variables might be set after module load
+  dotenv.config({ path: path.resolve(__dirname, '../.env'), override: true });
+  
+  const clientId = (
     process.env.TEST_SCRIPT_USER_POOL_CLIENT_ID ||
     process.env.COGNITO_CLIENT_ID ||
-    '';
+    ''
+  ).trim();
 
   if (!clientId) {
     throw new Error(
@@ -111,6 +122,10 @@ export async function getIdToken(
     );
   }
 
-  return await authenticateUser(email, password, clientId);
+  // Trim email and password to ensure no whitespace issues
+  const trimmedEmail = email.trim();
+  const trimmedPassword = password.trim();
+
+  return await authenticateUser(trimmedEmail, trimmedPassword, clientId);
 }
 
