@@ -63,6 +63,7 @@ Resources:
           HttpMethod: PUT
           ThrottlingBurstLimit: 50
           ThrottlingRateLimit: 25
+          CacheDataEncrypted: true
         # More lenient for public endpoints
         - ResourcePath: '/sources'
           HttpMethod: GET
@@ -86,7 +87,6 @@ Resources:
     Properties:
       Handler: index.handler
       Runtime: python3.12
-      Tracing: Active
       # This function's only job is to return the correct CORS headers for preflight OPTIONS requests.
       InlineCode: |
         import json
@@ -118,7 +118,6 @@ Resources:
       CodeUri: ../src/web_api/
       MemorySize: 256
       Timeout: 30
-      Tracing: Active
       Policies:
         - Statement:
             - Effect: Allow
@@ -129,13 +128,6 @@ Resources:
                 - dynamodb:BatchGetItem
                 - dynamodb:Scan
               Resource: !Ref ProgramDataTableArn
-            - Effect: Allow
-              Action:
-                - xray:PutTraceSegments
-                - xray:PutTelemetryRecords
-                - xray:GetSamplingRules
-                - xray:GetSamplingTargets
-              Resource: "*"
       Environment:
         Variables:
           DYNAMODB_TABLE_NAME: !Ref ProgramDataTableName

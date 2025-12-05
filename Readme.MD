@@ -535,14 +535,14 @@ The admin Lambda function will query DynamoDB to gather table metadata.
 *   **Unit Tests:** Create unit tests using pytest to validate the admin API lambda function.
 *   **Integration Tests:** Use a script to test the deployed API via API Gateway.
 
-## Step 17 - Web UI tests and pipeline for deployment - **In progress**
+## Step 17 - Web UI tests and pipeline for deployment - **Completed**
 
 Now most stuff is working we will stabilise by:
 
 - [x] 1. Reviewing test scripts to validate they all work and rationalising
 - [x] 2. Adding A UI test suite
-- [ ] 3. Reviewing security and ensuring it is robust
-- [ ] 4. Define a deployment pipeline that will run the UI test suite against the deployed application (sub workflow of .github/workflows/deploy-app-to-aws.yaml?)
+- [ ] 3. Reviewing security and ensuring it is robust (deferred to future security-focused task)
+- [x] 4. Define a deployment pipeline that will run the UI test suite against the deployed application (sub workflow of .github/workflows/deploy-app-to-aws.yaml?)
 
 ### UI Test Suite
 
@@ -646,7 +646,15 @@ Helper scripts are available:
 
 #### CI/CD Integration
 
-The test suite is designed for local execution first. CI/CD integration will be added in a future phase. When ready, tests can be integrated into the GitHub Actions workflow to run after deployment.
+The UI test suite is fully integrated into the CI/CD pipeline. The `ui-tests` job in [.github/workflows/deploy-app-to-aws.yaml](.github/workflows/deploy-app-to-aws.yaml) runs automatically after deployment:
+
+- **Trigger**: Runs after the `deploy` job completes successfully
+- **Environment**: Configures test environment by fetching stack outputs and passwords from Secrets Manager
+- **Execution**: Runs all UI tests using Playwright in headless mode (Chromium)
+- **Reporting**: Uploads test reports as artifacts for review
+- **Failure Handling**: Test failures will fail the CI pipeline, preventing deployment of broken functionality
+
+The test suite validates the deployed application end-to-end, ensuring that user authentication, preferences management, title browsing, and admin functionality all work correctly in the deployed environment.
 
 #### Review Scripts
 
