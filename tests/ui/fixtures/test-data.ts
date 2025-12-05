@@ -5,18 +5,42 @@
 // Load environment variables first to ensure they're available
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import * as fs from 'fs';
+
+// Determine the correct .env file path
+const envPath = path.resolve(__dirname, '../.env');
 
 // Load .env file with override to ensure values are set
-dotenv.config({ path: path.resolve(__dirname, '../.env'), override: true });
+const dotenvResult = dotenv.config({ path: envPath, override: true });
+
+// Log if .env file was found (only in debug mode to avoid noise)
+if (process.env.DEBUG_ENV_LOADING === 'true') {
+  if (dotenvResult.error) {
+    console.warn(`⚠️  Warning: Could not load .env file: ${dotenvResult.error.message}`);
+  } else {
+    console.log(`✅ Loaded .env file from: ${envPath}`);
+  }
+  
+  // Verify file exists
+  if (!fs.existsSync(envPath)) {
+    console.warn(`⚠️  Warning: .env file does not exist at: ${envPath}`);
+  }
+}
+
+// Helper function to safely get and trim environment variables
+function getEnvVar(key: string, defaultValue: string = ''): string {
+  const value = process.env[key] || defaultValue;
+  return value.trim();
+}
 
 export const TEST_USERS = {
   regular: {
-    email: (process.env.TEST_USER_EMAIL || 'test.user@example.com').trim(),
-    password: (process.env.TEST_USER_PASSWORD || '').trim(),
+    email: getEnvVar('TEST_USER_EMAIL', 'test.user@example.com'),
+    password: getEnvVar('TEST_USER_PASSWORD', ''),
   },
   admin: {
-    email: (process.env.ADMIN_USER_EMAIL || 'admin.user@example.com').trim(),
-    password: (process.env.ADMIN_USER_PASSWORD || '').trim(),
+    email: getEnvVar('ADMIN_USER_EMAIL', 'admin.user@example.com'),
+    password: getEnvVar('ADMIN_USER_PASSWORD', ''),
   },
 };
 

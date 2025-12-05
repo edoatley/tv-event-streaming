@@ -1,10 +1,23 @@
 import { defineConfig, devices } from '@playwright/test';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import * as fs from 'fs';
 
 // Load environment variables from .env file
 // Use override: true to ensure values from .env file override any existing env vars
-dotenv.config({ path: path.resolve(__dirname, '.env'), override: true });
+const envPath = path.resolve(__dirname, '.env');
+const dotenvResult = dotenv.config({ path: envPath, override: true });
+
+// Verify .env file was loaded (only log if there's an error or in debug mode)
+if (dotenvResult.error) {
+  console.warn(`⚠️  Warning: Could not load .env file: ${dotenvResult.error.message}`);
+  console.warn(`   Expected path: ${envPath}`);
+  if (!fs.existsSync(envPath)) {
+    console.warn(`   File does not exist at this path`);
+  }
+} else if (process.env.DEBUG_ENV_LOADING === 'true') {
+  console.log(`✅ Loaded .env file from: ${envPath}`);
+}
 
 /**
  * See https://playwright.dev/docs/test-configuration.

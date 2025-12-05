@@ -113,6 +113,52 @@ echo ""
 echo "🔐 Step 5: Validating passwords with Cognito authentication..."
 ./scripts/validate-passwords.sh ".env" "${REGION}" "${PROFILE}"
 
+# Step 6: Verify .env file is readable by Node.js
+echo ""
+echo "🔍 Step 6: Verifying .env file is readable by Node.js..."
+if command -v node >/dev/null 2>&1; then
+  # Use Node.js to verify the file can be read and parsed
+  node -e "
+    const fs = require('fs');
+    const path = require('path');
+    const dotenv = require('dotenv');
+    const envPath = path.resolve(process.cwd(), '.env');
+    
+    if (!fs.existsSync(envPath)) {
+      console.error('❌ ERROR: .env file does not exist at:', envPath);
+      process.exit(1);
+    }
+    
+    const result = dotenv.config({ path: envPath, override: true });
+    if (result.error) {
+      console.error('❌ ERROR: Failed to parse .env file:', result.error.message);
+      process.exit(1);
+    }
+    
+    const testPwd = (process.env.TEST_USER_PASSWORD || '').trim();
+    const adminPwd = (process.env.ADMIN_USER_PASSWORD || '').trim();
+    
+    if (!testPwd || testPwd.length === 0) {
+      console.error('❌ ERROR: TEST_USER_PASSWORD is empty or not set');
+      process.exit(1);
+    }
+    
+    if (!adminPwd || adminPwd.length === 0) {
+      console.error('❌ ERROR: ADMIN_USER_PASSWORD is empty or not set');
+      process.exit(1);
+    }
+    
+    console.log('✅ .env file is readable by Node.js');
+    console.log('   TEST_USER_PASSWORD length:', testPwd.length);
+    console.log('   ADMIN_USER_PASSWORD length:', adminPwd.length);
+  " || {
+    echo "❌ ERROR: Node.js verification failed"
+    exit 1
+  }
+else
+  echo "⚠️  Warning: Node.js not found, skipping Node.js verification"
+fi
+
 echo ""
 echo "✅ Test environment configured successfully!"
 

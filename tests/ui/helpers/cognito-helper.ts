@@ -106,10 +106,15 @@ export async function getIdToken(
   email: string,
   password: string
 ): Promise<string> {
-  const clientId =
+  // Reload environment variables to ensure we have the latest values
+  // This is important because environment variables might be set after module load
+  dotenv.config({ path: path.resolve(__dirname, '../.env'), override: true });
+  
+  const clientId = (
     process.env.TEST_SCRIPT_USER_POOL_CLIENT_ID ||
     process.env.COGNITO_CLIENT_ID ||
-    '';
+    ''
+  ).trim();
 
   if (!clientId) {
     throw new Error(
@@ -117,6 +122,10 @@ export async function getIdToken(
     );
   }
 
-  return await authenticateUser(email, password, clientId);
+  // Trim email and password to ensure no whitespace issues
+  const trimmedEmail = email.trim();
+  const trimmedPassword = password.trim();
+
+  return await authenticateUser(trimmedEmail, trimmedPassword, clientId);
 }
 
